@@ -57,20 +57,151 @@ struct Player {
 };
 
 struct Pet {
+    string nama;
     int Base_Damage;
     int Base_Hp;
     string design;
     int def;
     int crital_chance;
     int crital_damage;
+    string ULT;
 };   
+
 
 Player currentplayer;
 Pet Character[15];
-
 string word;
 
+
+void StatsCharacter() {
+// ================= COMMON =================
+Character[0].nama = "Ireng_Jogja";
+Character[0].Base_Damage = 20;
+Character[0].Base_Hp = 120;
+Character[0].def = 10;
+Character[0].crital_chance = 10;
+Character[0].crital_damage = 150;
+Character[0].ULT = "";
+
+Character[1].nama = "Laba_Laba_Sunda";
+Character[1].Base_Damage = 18;
+Character[1].Base_Hp = 100;
+Character[1].def = 8;
+Character[1].crital_chance = 25;
+Character[1].crital_damage = 170;
+Character[1].ULT = "";
+
+Character[2].nama = "Sawit_Bantul";
+Character[2].Base_Damage = 15;
+Character[2].Base_Hp = 150;
+Character[2].def = 20;
+Character[2].crital_chance = 5;
+Character[2].crital_damage = 130;
+Character[2].ULT = "";
+
+// ================= RARE =================
+Character[3].nama = "Kevin_Hitam";
+Character[3].Base_Damage = 35;
+Character[3].Base_Hp = 90;
+Character[3].def = 5;
+Character[3].crital_chance = 20;
+Character[3].crital_damage = 200;
+Character[3].ULT = "";
+
+Character[4].nama = "Rigby_Wonosobo";
+Character[4].Base_Damage = 28;
+Character[4].Base_Hp = 130;
+Character[4].def = 12;
+Character[4].crital_chance = 15;
+Character[4].crital_damage = 160;
+Character[4].ULT = "";
+
+Character[5].nama = "Aren_Gentong";
+Character[5].Base_Damage = 22;
+Character[5].Base_Hp = 180;
+Character[5].def = 25;
+Character[5].crital_chance = 10;
+Character[5].crital_damage = 140;
+Character[5].ULT = "";
+
+Character[6].nama = "Arpin_Gontor";
+Character[6].Base_Damage = 18;
+Character[6].Base_Hp = 200;
+Character[6].def = 30;
+Character[6].crital_chance = 5;
+Character[6].crital_damage = 130;
+Character[6].ULT = "";
+
+Character[7].nama = "Mister_orange";
+Character[7].Base_Damage = 24;
+Character[7].Base_Hp = 110;
+Character[7].def = 10;
+Character[7].crital_chance = 18;
+Character[7].crital_damage = 150;
+Character[7].ULT = "";
+
+Character[8].nama = "Slot_Gacor";
+Character[8].Base_Damage = 15;
+Character[8].Base_Hp = 100;
+Character[8].def = 8;
+Character[8].crital_chance = 40;
+Character[8].crital_damage = 250;
+Character[8].ULT = "";
+
+// ================= EPIC =================
+Character[9].nama = "Hanif_Ninja";
+Character[9].Base_Damage = 45;
+Character[9].Base_Hp = 110;
+Character[9].def = 10;
+Character[9].crital_chance = 30;
+Character[9].crital_damage = 220;
+Character[9].ULT = "";
+
+Character[10].nama = "Mr_Kucing";
+Character[10].Base_Damage = 32;
+Character[10].Base_Hp = 160;
+Character[10].def = 18;
+Character[10].crital_chance = 20;
+Character[10].crital_damage = 170;
+Character[10].ULT = "";
+
+Character[11].nama = "Imissher_Kaliurang";
+Character[11].Base_Damage = 25;
+Character[11].Base_Hp = 120;
+Character[11].def = 12;
+Character[11].crital_chance = 25;
+Character[11].crital_damage = 180;
+Character[11].ULT = "";
+
+// ================= LEGENDARY =================
+Character[12].nama = "Ryan_Gosling";
+Character[12].Base_Damage = 50;
+Character[12].Base_Hp = 180;
+Character[12].def = 20;
+Character[12].crital_chance = 25;
+Character[12].crital_damage = 200;
+Character[12].ULT = "";
+
+Character[13].nama = "Anakin_Skywalker";
+Character[13].Base_Damage = 60;
+Character[13].Base_Hp = 150;
+Character[13].def = 15;
+Character[13].crital_chance = 35;
+Character[13].crital_damage = 250;
+Character[13].ULT = "";
+
+Character[14].nama = "Thom_Yorke";
+Character[14].Base_Damage = 40;
+Character[14].Base_Hp = 140;
+Character[14].def = 18;
+Character[14].crital_chance = 30;
+Character[14].crital_damage = 210;
+Character[14].ULT = "";
+
+}
+
 void initCharacter() {
+
     Character[0].design = R"(    \\_//
    __/". 
   /__ |
@@ -405,7 +536,7 @@ if (pilih == 3) {
     exit(0);
 }
 
-}////
+}
 
 
 void Tutorial1() {
@@ -444,7 +575,7 @@ void Tutorial1() {
 
 
 void BattleUI() {
-    string pad = "            ";
+    string pad = "";
 
     setWarna(7);
     cout << "\n\n\n";
@@ -485,15 +616,29 @@ BattleUI();
 
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 int main() {
+StatsCharacter();
 initCharacter();
 ofstream File("save.txt", ios::app);
 File.close();
-//Logo();
+Logo();
 ifstream Tutorial("save.txt", ios::app);
 /////////////////////////////////////// TUTORIAL FIGHT
 system("cls");
-bool Tutor = true;
+bool Tutor = false;
 while (Tutorial >> word) {
     if (word == "Tutor_True") {
         Tutor = false;
@@ -502,7 +647,7 @@ while (Tutorial >> word) {
 }
 
 if (Tutor) {
-   //Tutorial1();
+   Tutorial1();
 }
 //////////////////////////////////////
 Testing();
