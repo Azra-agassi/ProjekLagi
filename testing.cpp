@@ -86,7 +86,7 @@ string word;
 
 void StatsMonster() {
 Monster[0].nama = "Shadow_Fang";
-Monster[0].Base_Damage = 1;
+Monster[0].Base_Damage = 30;
 Monster[0].Base_Hp = 1400;
 Monster[0].def = 12;
 Monster[0].crital_chance = 20;
@@ -440,40 +440,14 @@ void BattleUI(int HpKawan,int HpMusuh,int UltPoin) {
     cout << "\nPilih aksi (1-4): ";
 }
 
-void ULT(int CharacterKawan,int CharacterMusuh,int &HpKawan,int &HpMusuh,bool &ULT,int &PointULT) {
-int Random;
-
-    cout << "ULT AKTIF: " << Character[CharacterKawan].nama << endl;
-
-    switch (CharacterKawan) {
-        case 0:
-        cout << "Serangan Ireng!\n"; //SISTEM BURST DAMAGE AJA Scaling Dari Critical Damage NAMBAH 20% DAMAGE
-        Sleep(1000);
-        PointULT = 0;
-        HpMusuh -=  (Character[CharacterKawan].Base_Damage * (Character[CharacterKawan].crital_damage / 100.0)) * 1.2;
-        cout << "DAMAGE: " << (Character[CharacterKawan].Base_Damage * (Character[CharacterKawan].crital_damage / 100.0)) * 1.2;
-        ULT = false;
-        break;
-        case 1:
-        cout << "Life Steal Jaring!\n"; //Life Steal Damage tetep sama ngikutin base damage ama life steal ambil 50% hasil damage kita
-        Sleep(1000);
-        PointULT = 0;
-        HpMusuh -= Character[CharacterKawan].Base_Damage;
-        HpKawan += (Character[CharacterKawan].Base_Damage * 0.5);
-        cout << "DAMAGE: " << Character[CharacterKawan].Base_Damage << "\n" << "LIFESTEAL: " << (Character[CharacterKawan].Base_Damage * 0.5);
-        break;
-        case 2:
-        
-    }
-
-
+void ulti() {
+    
 
 }
 
 
-void AI(int CharacterMonster,int &HpKawan,int &HpMusuh,bool Defend,int CharacterKawan,int &PointULT,int &BuffSawit) {
+void AI(int CharacterMonster,int &HpKawan,int &HpMusuh,bool Defend,int CharacterKawan,int &PointULT) {
 
-int Buff = 0;
 if (Defend) {
     int roll = rand() % 100 + 1;
 
@@ -486,12 +460,8 @@ if (Defend) {
     int finalDamage = damage * (1 - reduction);
 
     if (finalDamage < 1) finalDamage = 1;
-    if (BuffSawit > 0) {
-        Buff = 20;
-        BuffSawit--;
-    }
 
-    if (roll <= 60 - Buff) {
+    if (roll <= 60) {
         cout << "BLOCK!\n";
         HpKawan -= finalDamage;
     }
@@ -500,9 +470,8 @@ if (Defend) {
         HpKawan -= finalDamage;
 
         // reflect sebagian damage 
-        int reflectDamage = damage * 0.7; // 70% reflect
+        int reflectDamage = damage * 0.9; // 90% reflect
         HpMusuh -= reflectDamage;
-        if (BuffSawit > 0)
         PointULT++;
     }
     Sleep(1000);
@@ -516,7 +485,7 @@ else {
 
 }
 
-void AttackCharacter(int Aksi,int &HpKawan,int &HpMusuh,int CharacterKawan,bool &Defend,bool &ULTI,int &PointULT,int CharacterMusuh) {
+void AttackCharacter(int Aksi,int HpKawan,int &HpMusuh,int CharacterKawan,bool &Defend,bool ULTI,int &PointULT,int CharacterMusuh) {
 int TempBaseDamageCrit = 0;
 int TempDefend = 0;
 int ChangeCrit = 0;
@@ -556,11 +525,9 @@ do {
 
     else if (Aksi == 3) {
         if (ULTI) {
+            ulti();
             cout << "MELAKUKAN ULT" << endl;
-            ULT(CharacterKawan,CharacterMusuh,HpKawan,HpMusuh,ULTI,PointULT);
-            Sleep(1000);
-            system("cls");
-            continue;
+            break;
         } else {
             cout << "ULT belum siap!" << endl;
             Sleep(1000);
@@ -579,6 +546,7 @@ do {
 
 }
 
+
 void Fight() {
 int SelectC;
 int SelectV;
@@ -586,7 +554,6 @@ int TempHPC = 0;
 int TempHPV = 0;
 bool IsDefend;
 bool IsULT = false;
-bool StatusUlt = false;
 bool Kawan = true;
 bool Musuh = true;
 int Action = 0;
@@ -602,7 +569,7 @@ system("cls");
 while (Kawan && Musuh) {
 IsDefend = false;
 system("cls");
-cout << PointULT;
+
 
 AttackCharacter(Action,TempHPC,TempHPV,SelectC,IsDefend,IsULT,PointULT,SelectV);
 AI(SelectV,TempHPC,TempHPV,IsDefend,SelectC,PointULT);
@@ -620,11 +587,16 @@ if (TempHPV <= 0) {
     Musuh = false;
 }
 
+
+
 }
 
 }
+
+
 
 int main() {
+
 IsiData();
 Fight();
 
