@@ -80,8 +80,8 @@ void setWarna(int warna) {
 // ===== DATA =====
 void StatsMonster() {
     Monster[0].nama = "Shadow_Fang";
-    Monster[0].Base_Damage = 1;
-    Monster[0].Base_Hp = 1600;
+    Monster[0].Base_Damage = 10;
+    Monster[0].Base_Hp = 16000;
     Monster[0].def = 12;
     Monster[0].crital_chance = 20;
     Monster[0].crital_damage = 170;
@@ -399,7 +399,7 @@ void IsiData() {
 }
 
 // ===== BATTLE UI =====
-void BattleUI(int HpKawan, int HpMusuh, int UltPoin, int MarkStatus, int MarkTurn, int Marked) {
+void BattleUI(int HpKawan, int HpMusuh, int UltPoin, int MarkStatus, int MarkTurn, int Marked, bool ReviveK, int JumlahRevive, int MaxTurnK) {
     string pad = "";
     setWarna(7);
     cout << "\n\n\n";
@@ -424,6 +424,9 @@ void BattleUI(int HpKawan, int HpMusuh, int UltPoin, int MarkStatus, int MarkTur
     cout << pad << "|                                                      |\n";
     cout << pad << "+------------------------------------------------------+\n";
     cout << "HP Kamu: " << HpKawan << "  |  HP Musuh: " << HpMusuh << "  |  ULT Point: " << UltPoin << "/4\n";
+    if (ReviveK) {
+        cout << "MAX TURN " << MaxTurnK << "/" << "5";
+        }
     if (MarkStatus == 1) {
         setWarna(5);
         cout << "MARK TURN " << MarkTurn << "/" << "10" << " || ENEMY MARKED" << Marked << "/" << "6";
@@ -434,7 +437,7 @@ void BattleUI(int HpKawan, int HpMusuh, int UltPoin, int MarkStatus, int MarkTur
 
 // ===== ULT =====
 // FIX: renamed parameter 'ULT' -> 'statusULT' to avoid clash with function name
-void doULT(int CharacterKawan, int CharacterMusuh, int &HpKawan, int &HpMusuh, bool &statusULT, int &PointULT,int &BuffSawit, int &BuffKevin, int &BuffRigby, int &BuffAren, int &MarkStatus, int &Marked, int &MarkTurn) {
+void doULT(int CharacterKawan, int CharacterMusuh, int &HpKawan, int &HpMusuh, bool &statusULT, int &PointULT,int &BuffSawit, int &BuffKevin, int &BuffRigby, int &BuffAren, int &MarkStatus, int &Marked, int &MarkTurn,bool &ReviveK,int &JumlahRevive,int &MaxTurnK) {
     bool check;
     switch (CharacterKawan) {
         case 0:
@@ -556,6 +559,8 @@ void doULT(int CharacterKawan, int CharacterMusuh, int &HpKawan, int &HpMusuh, b
                 PointULT = 0;
                 break;
         }        
+
+
         case 9: 
         if (MarkedBool) {
         MarkStatus = 1;
@@ -597,6 +602,75 @@ void doULT(int CharacterKawan, int CharacterMusuh, int &HpKawan, int &HpMusuh, b
         PointULT = 0;
         break;
 
+
+        case 10:
+        if (JumlahRevive <= 2) {
+        ReviveK = true;
+        cout << "MR KUCING MODE AKTIF\n";
+        }
+        else {
+            cout << "ULTI GAGAL MELEBIHI BATAS";
+        }
+        MaxTurnK = 0;       // WAJIB
+        PointULT = 0;
+        statusULT = false;
+        break;
+
+        case 11: {
+        setWarna(13);
+        cout << "DESPERATE MEMORY \n";
+
+        float hpPercent = (float)HpKawan / Character[CharacterKawan].Base_Hp;
+
+        float multiplier = 1 + (1 - hpPercent) * 2;
+
+        int damage = Character[CharacterKawan].Base_Damage * multiplier;
+
+        setWarna(11);
+        cout << "HP: " << HpKawan << "/" << Character[CharacterKawan].Base_Hp << endl;
+
+        setWarna(14);
+        cout << "MULTIPLIER: x" << multiplier << endl;
+
+        setWarna(12);
+        HpMusuh -= damage;
+        cout << " DAMAGE: " << damage << endl;
+
+        //  lifesteal saat kritis
+        if (hpPercent < 0.2) {
+            int heal = damage * 0.2;
+
+            HpKawan += heal;
+
+            setWarna(4);
+            cout << " CRITICAL CONDITION!\n";
+
+            setWarna(10);
+            cout << " LIFESTEAL: +" << heal << endl;
+        }
+
+        setWarna(7); // reset warna
+        PointULT = 0;
+        break;
+    }
+
+        case 12: 
+
+
+
+        
+
+
+
+
+
+
+
+
+            PointULT = 0;
+            break;
+        
+
         default:
             cout << "ULT karakter ini belum diimplementasi.\n";
             statusULT = false;
@@ -607,7 +681,7 @@ void doULT(int CharacterKawan, int CharacterMusuh, int &HpKawan, int &HpMusuh, b
 }
 
 // ===== AI =====
-void AI(int CharacterMonster, int &HpKawan, int &HpMusuh, bool Defend, int CharacterKawan, int &PointULT, int &BuffSawit,int &BuffAren) {
+void AI(int CharacterMonster, int &HpKawan, int &HpMusuh, bool Defend, int CharacterKawan, int &PointULT, int &BuffSawit,int &BuffAren,bool ReviveK) {
     int Buff = 0;
     int BuffA = 0;
     int BuffAd = 0;
@@ -643,7 +717,7 @@ void AI(int CharacterMonster, int &HpKawan, int &HpMusuh, bool Defend, int Chara
             int reflectDamage = (int)(damage * 0.7);
             HpMusuh -= reflectDamage; //deflect
             cout << "Reflect damage ke musuh: " << reflectDamage << "\n";
-            if (BuffSawit == 0 && BuffAren == 0) {
+            if (BuffSawit == 0 && BuffAren == 0 && ReviveK == false) {
                 PointULT++;
             }
         }
@@ -656,7 +730,7 @@ void AI(int CharacterMonster, int &HpKawan, int &HpMusuh, bool Defend, int Chara
 }
 
 // ===== ATTACK =====
-void AttackCharacter(int Aksi, int &HpKawan, int &HpMusuh, int CharacterKawan, bool &Defend, bool &IsULT, int &PointULT, int CharacterMusuh, int &BuffSawit, int &BuffKevin, int &BuffRigby, int &BuffAren, int &MarkStatus, int &Marked, int &MarkTurn) {
+void AttackCharacter(int Aksi, int &HpKawan, int &HpMusuh, int CharacterKawan, bool &Defend, bool &IsULT, int &PointULT, int CharacterMusuh, int &BuffSawit, int &BuffKevin, int &BuffRigby, int &BuffAren, int &MarkStatus, int &Marked, int &MarkTurn,bool &ReviveK,int &JumlahRevive, int &MaxTurnK) {
     int TempBaseDamageCrit = 0;
     int ChangeCrit = 0;
     int TempBaseDamage = 0;
@@ -666,7 +740,7 @@ void AttackCharacter(int Aksi, int &HpKawan, int &HpMusuh, int CharacterKawan, b
     do {
         system("cls");
         printSideBySide(Character[CharacterKawan].design, Monster[CharacterMusuh].design, 30);
-        BattleUI(HpKawan, HpMusuh, PointULT, MarkStatus, MarkTurn, Marked);
+        BattleUI(HpKawan, HpMusuh, PointULT, MarkStatus, MarkTurn, Marked, ReviveK, JumlahRevive, MaxTurnK);
         cin >> Aksi;
 
         if (BuffKevin > 0) {
@@ -682,8 +756,6 @@ void AttackCharacter(int Aksi, int &HpKawan, int &HpMusuh, int CharacterKawan, b
             BuffRigby--;
         }
 
-
-
         if (Aksi == 1) {
             ChangeCrit = rand() % 100 + 1;
             ChangeCrit = 1; // testing
@@ -691,7 +763,7 @@ void AttackCharacter(int Aksi, int &HpKawan, int &HpMusuh, int CharacterKawan, b
                 TempBaseDamageCrit = (int)((Character[CharacterKawan].Base_Damage * (Character[CharacterKawan].crital_damage / 100.0)) * BuffK * BuffR);
                 HpMusuh -= TempBaseDamageCrit;
                 cout << "CRITICAL HIT! DAMAGE: " << TempBaseDamageCrit << endl;
-                if (BuffKevin == 0 && BuffRigby == 0 && MarkStatus == 0) {
+                if (BuffKevin == 0 && BuffRigby == 0 && MarkStatus == 0 && ReviveK == false) {
                     PointULT++;
                 }
             } else {
@@ -707,7 +779,7 @@ void AttackCharacter(int Aksi, int &HpKawan, int &HpMusuh, int CharacterKawan, b
         }
         else if (Aksi == 3) {
             if (IsULT) {
-                doULT(CharacterKawan, CharacterMusuh, HpKawan, HpMusuh, IsULT, PointULT, BuffSawit ,BuffKevin, BuffRigby,BuffAren, MarkStatus, Marked, MarkTurn);
+                doULT(CharacterKawan, CharacterMusuh, HpKawan, HpMusuh, IsULT, PointULT, BuffSawit ,BuffKevin, BuffRigby,BuffAren, MarkStatus, Marked, MarkTurn,ReviveK, JumlahRevive, MaxTurnK);
                 if (HpMusuh <= 0) {
                 break;
                 }
@@ -746,6 +818,9 @@ void Fight() {
     int MarkStatus = 0;
     int Marked = 0;
     int MarkTurn = 0;
+    bool ReviveK = false;
+    int JumlahRevive = 0;
+    int MaxTurnK = 0;
     // Tampilkan daftar karakter
     cout << "=== PILIH KARAKTER ===\n";
     cout << "[COMMON]  0.Ireng_Jogja  1.Laba_Laba_Sunda  2.Sawit_Bantul\n";
@@ -775,17 +850,41 @@ void Fight() {
     system("cls");
 
     while (Kawan && Musuh) {
-        IsDefend = false;
-        
-        // FIX: pass BuffSawit ke AI
-        AttackCharacter(Action, TempHPC, TempHPV, SelectC, IsDefend, IsULT, PointULT, SelectV, BuffSawit, BuffKevin, BuffRigby, BuffAren, MarkStatus, Marked, MarkTurn);
-        if (TempHPC <= 0) { Kawan = false; break; }  // ← tambah break
-        if (TempHPV <= 0) { Musuh = false; break; }  // ← tambah break
-        AI(SelectV, TempHPC, TempHPV, IsDefend, SelectC, PointULT, BuffSawit, BuffAren);
 
-        if (MarkStatus == 1) {
+        IsDefend = false;
+        if (ReviveK) {
+            MaxTurnK++;
+            if (MaxTurnK > 5 || JumlahRevive >= 3) {
+                ReviveK = false;
+            }
+        }
+        // FIX: pass BuffSawit ke AI
+        AttackCharacter(Action, TempHPC, TempHPV, SelectC, IsDefend, IsULT, PointULT, SelectV, BuffSawit, BuffKevin, BuffRigby, BuffAren, MarkStatus, Marked, MarkTurn,ReviveK,JumlahRevive,MaxTurnK);
+     
+        // 🔥 CEK MATI DULU (biar clean)
+        if (ReviveK && TempHPC <= 0 && JumlahRevive < 3) {
+            TempHPC = Character[SelectC].Base_Hp * 0.5;
+            JumlahRevive++;
+            ReviveK = false;
+            cout << "MR MR MR REVIVE REVIVE REVIVE BANGKITLAHHHH";
+            Sleep(1000);
+        }
+
+        AI(SelectV, TempHPC, TempHPV, IsDefend, SelectC, PointULT, BuffSawit, BuffAren, ReviveK);
+
+        // 🔥 CEK LAGI (kalau mati dari AI)
+        if (ReviveK && TempHPC <= 0 && JumlahRevive < 3) {
+            TempHPC = Character[SelectC].Base_Hp * 0.5;
+            JumlahRevive++;
+            ReviveK = false;
+            cout << "MR MR MR REVIVE REVIVE REVIVE BANGKITLAHHHH";
+            Sleep(1000);
+        }
+        
+
+        if (MarkStatus == 1) {  //HANIP NINJA
         int roll = rand() % 100 + 1;
-        if (roll <= 50) {
+        if (roll <= 30) {
         Marked++;
         cout << "MARKED " << Marked;
         }
@@ -799,7 +898,7 @@ void Fight() {
             Marked = 0;
             MarkStatus = 0;
             IsULT = false;
-            PointULT == 0;
+            PointULT = 0;
         }
         }
 
