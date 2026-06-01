@@ -4,8 +4,7 @@
 #include <vector>
 #include <algorithm>
 #include <cstdio>
-#include <cstdlib>
-#include <ctime>
+#include <ctime> 
 #include <windows.h>
 using namespace std;
 
@@ -19,6 +18,7 @@ struct Player {
     int level;
     int xp;
     int primo;
+    bool LevelUnlock[14] = {false};
 };
 
 struct Pet {
@@ -43,27 +43,31 @@ struct Villain {
     int crital_chance;
     int crital_damage;
     int level;
-    int aggression;
     bool isBoss;
 };
 
 // ===== GLOBALS =====
 Player currentplayer;
 Pet Character[14];
-Villain Monster[1];
+Villain Monster[9];
 string word;
 
 // ===== FORWARD DECLARATIONS =====
 void lore();
 void Logo();
 void Tutorial1();
-void Fight();
+void AddXP(int amount);
+bool Fight(int PilihKarakter,int PilihMusuh);
 void IsiData();
 void initCharacter();
 void StatsCharacter();
 void StatsMonster();
 void tampilSort();
 void quickSort();
+void Xp();
+void EndlessMode();
+void simpanData();
+void StoryMode();
 void printSideBySide(const string& kiri, const string& kanan, int jarak);
 void BattleUI(int HpKawan, int HpMusuh, int UltPoin, int MarkStatus, int MarkTurn, int Marked, bool ReviveK, int JumlahRevive, int MaxTurnK, bool &MarlongMode, int &JumlahMarlong, int &MarlongTurn, bool DarkForce, int DarkForceTurn);
 void doULT(int CharacterKawan, int CharacterMusuh, int &HpKawan, int &HpMusuh, bool &statusULT, int &PointULT, int &BuffSawit, int &BuffKevin, int &BuffRigby, int &BuffAren, int &MarkStatus, int &Marked, int &MarkTurn, bool &ReviveK, int &JumlahRevive, int &MaxTurnK, bool &MarlongMode, bool &DarkForce);
@@ -87,7 +91,6 @@ void setWarna(int warna) {
 }
 
 void pause() {
-    cout << "Tekan ENTER...";
     cin.ignore(1000, '\n');
     cin.get();
 }
@@ -111,6 +114,157 @@ void printSideBySide(const string& kiri, const string& kanan, int jarak = 4) {
         printf("%-*s%*s%s\n", lebarKiri, colomKiri.c_str(), jarak, "", colomKanan.c_str());
     }
 }
+
+void StoryMode() {
+    system("cls");
+    currentplayer.LevelUnlock[1] = true;
+
+    int monsterPerLevel[] = {
+        -1,  
+        0,   
+        1,   
+        2,   
+        3,   
+        4,   
+        3,   
+        4,   
+        5,   
+        6,   
+        7,   
+        6,   
+        7,   
+        8,   
+    };
+
+    // Tampilan level
+    cout << "=============================\n";
+    for (int i = 1; i <= 13; i++) {
+        if (i == 1)  cout << "FLOOR 1 (1-5)\n";
+        if (i == 6)  cout << "\nFLOOR 2 (6-10)\n";
+        if (i == 11) cout << "\nFLOOR 3 (11-13)\n";
+
+        if (currentplayer.LevelUnlock[i]) setWarna(10);
+        else setWarna(12);
+
+        cout << "[" << i << "] ";
+
+        if (i == 5 || i == 10) cout << "\n";
+    }
+    setWarna(7);
+
+    // Pilih karakter
+    int pilihKarakter;
+    cout << "\n\nList character\n";
+    for (int i = 0; i < 14; i++)
+        if (Character[i].unlock) cout << i+1 << ". " << Character[i].nama << "  ";
+
+    do {
+        cout << "\nPilih Karakter (1-14) (0 = BACK): ";
+        cin >> pilihKarakter;
+        if (pilihKarakter == 0) return;
+        pilihKarakter--;
+        if (pilihKarakter >= 0 && pilihKarakter < 14 && Character[pilihKarakter].unlock)
+            break;
+        cout << "Character Terkunci atau tidak valid!\n";
+    } while (true);
+
+    // Pilih level
+    int pilihLevel;
+    do {
+        cout << "Pilih Level (1-13): ";
+        cin >> pilihLevel;
+        if (pilihLevel < 1 || pilihLevel > 13)
+            cout << "Level tidak valid!\n";
+        else if (!currentplayer.LevelUnlock[pilihLevel])
+            cout << "LEVEL MASIH TERKUNCI!\n";
+        else
+            break;
+    } while (true);
+
+    // Fight & reward — satu blok untuk semua level
+    bool menang = Fight(pilihKarakter, monsterPerLevel[pilihLevel]);
+
+    if (menang) {
+        int nextLevel = pilihLevel + 1;
+
+        // Reward hanya kalau belum pernah clear
+        if (nextLevel <= 13 && !currentplayer.LevelUnlock[nextLevel]) {
+            AddXP(100);
+            currentplayer.primo += 10;
+            cout << "+10 Primo!\n";
+        }
+
+        // Unlock level berikutnya
+        if (nextLevel <= 13)
+            currentplayer.LevelUnlock[nextLevel] = true;
+
+        simpanData();
+        cout << "Level " << pilihLevel << " selesai!\n";
+    } else {
+        cout << "Kamu kalah! Coba lagi.\n";
+    }
+}
+
+void EndlessMode() {
+    system("cls");
+
+    cout << "=============================\n";
+    cout << "      ENDLESS MODE\n";
+    cout << "=============================\n";
+    for (int i = 0; i < 14; i++)
+        if (Character[i].unlock) cout << i+1 << ". " << Character[i].nama << "  ";
+
+    int pilihKarakter;
+    do {
+        cout << "\nPilih Karakter (1-14) (0 BACK): ";
+        cin >> pilihKarakter;
+        if (pilihKarakter == 0) return;
+        pilihKarakter--;
+    } while (pilihKarakter < 0 || pilihKarakter >= 14 || !Character[pilihKarakter].unlock);
+
+    int wave    = 1;
+    float multi = 1.0f;
+    int hpAsli  = Monster[0].Base_Hp;
+    int dmgAsli = Monster[0].Base_Damage;
+
+    while (true) {
+        Monster[0].Base_Hp     = (int)(hpAsli  * multi);
+        Monster[0].Base_Damage = (int)(dmgAsli * multi);
+
+        system("cls");
+        setWarna(14); cout << "=== WAVE " << wave << " (x" << multi << ") ===\n";
+        setWarna(11); cout << Monster[0].nama << " | HP: " << Monster[0].Base_Hp << " | DMG: " << Monster[0].Base_Damage << "\n";
+        setWarna(7);  cout << "Tekan ENTER..."; cin.ignore(1000,'\n'); cin.get();
+
+        bool menang = Fight(pilihKarakter, 0);
+
+        Monster[0].Base_Hp     = hpAsli;
+        Monster[0].Base_Damage = dmgAsli;
+
+        if (!menang) break;
+
+        AddXP((int)(50 * multi));
+        currentplayer.primo += 5; cout << "+10 Primo!\n"; 
+        simpanData();
+
+        multi += 0.2f;
+        wave++;
+
+        int pilih;
+        setWarna(10); cout << "Wave selesai! 1.Lanjut  2.Berhenti: ";
+        setWarna(7);  cin >> pilih; cin.ignore(1000,'\n');
+        if (pilih != 1) break;
+    }
+
+    system("cls");
+    setWarna(12); cout << "=== ENDLESS SELESAI ===\n";
+    setWarna(7);
+    cout << "Wave  : " << wave << "\n";
+    cout << "Multi : x" << multi << "\n";
+    simpanData();
+    cout << "Tekan ENTER..."; cin.ignore(1000,'\n'); cin.get();
+}
+
 
 // ===== INIT DATA =====
 void IsiULT() {
@@ -212,27 +366,23 @@ void IsiULT() {
     "Notes  : Comeback";
 }
 
+
 int calcDamage(int level, int growth) {
     if (level == 0) return 0;
-
     return growth + calcDamage(level - 1, growth);
 }
 
 int calcCrit(int level, int growth) {
     if (level == 0) return 0;
-
     int add = 0;
     if (level % 5 == 0) add = growth;
-
     return add + calcCrit(level - 1, growth);
 }
 
 int calcDef(int level, int growth) {
     if (level == 0) return 0;
-
     int add = 0;
     if (level % 2 == 0) add = growth;
-
     return add + calcDef(level - 1, growth);
 }
 
@@ -380,35 +530,111 @@ _   /  `   |
 )ASCII";
 }
 
+
+// ===== UPGRADE SYSTEM — FIXED: stat sekarang beneran diapply =====
 void UpgradeSystem() {
     int lvl = currentplayer.level;
 
     for (int i = 0; i < 14; i++) {
-
-        int dmg = 0, crit = 0, def = 0;
+        int dmg = 0, crit = 0, def = 0, hp = 0;
 
         if (Character[i].rarity == "C") {
-            dmg = calcDamage(lvl, 2);
+            dmg  = calcDamage(lvl, 2);
             crit = calcCrit(lvl, 1);
-            def = calcDef(lvl, 2);
+            def  = calcDef(lvl, 2);
         }
         else if (Character[i].rarity == "R") {
-            dmg = calcDamage(lvl, 2);
+            dmg  = calcDamage(lvl, 2);
             crit = calcCrit(lvl, 1);
-            def = calcDef(lvl, 2);
+            def  = calcDef(lvl, 2);
         }
         else if (Character[i].rarity == "SR") {
-            dmg = calcDamage(lvl, 3);
+            dmg  = calcDamage(lvl, 3);
             crit = calcCrit(lvl, 2);
-            def = calcDef(lvl, 2);
+            def  = calcDef(lvl, 2);
         }
         else if (Character[i].rarity == "SSR") {
-            dmg = calcDamage(lvl, 4);
+            dmg  = calcDamage(lvl, 4);
             crit = calcCrit(lvl, 3);
-            def = calcDef(lvl, 3);
+            def  = calcDef(lvl, 3);
         }
 
+        Character[i].Base_Damage    += (dmg / max(lvl, 1));
+        Character[i].Base_Hp        += 5;
+        Character[i].def            += (def / max(lvl, 1));
+        Character[i].crital_chance  = min(Character[i].crital_chance + (crit / max(lvl, 1)), 95);
     }
+}
+
+int xpTable[] = {
+    0,    // index 0 — tidak dipakai
+    50,   // level 1 → 2
+    75,   // level 2 → 3
+    100,
+    130,
+    170,
+    220,
+    280,
+    350,
+    450,
+    500,
+    600,
+    700,
+    750,
+    860,
+    900,
+    1000,
+    1100,
+    1200,
+    1300,
+    1400,
+    1500,
+    1600,
+    1700,
+    1800,
+    1900,
+    2000,
+    2200,
+    2300,
+    2400,
+    2500  // level 30 → max
+};
+
+void AddXP(int amount) {
+    int MAX_LEVEL = 30;
+
+    currentplayer.xp += amount;
+    setWarna(14);
+    cout << "+" << amount << " XP!\n";
+    setWarna(7);
+
+    // FIXED: pakai level+1 sebagai index, stop di MAX_LEVEL
+    while (currentplayer.level < MAX_LEVEL) {
+        int xpNeed = xpTable[currentplayer.level + 1];
+
+        if (currentplayer.xp >= xpNeed) {
+            currentplayer.xp -= xpNeed;
+            currentplayer.level++;
+
+            setWarna(14);
+            cout << "LEVEL UP! → Level " << currentplayer.level << "\n";
+            setWarna(7);
+
+            UpgradeSystem();
+        } else {
+            break;
+        }
+    }
+
+    if (currentplayer.level < MAX_LEVEL) {
+        cout << "XP: " << currentplayer.xp << "/" << xpTable[currentplayer.level + 1] << "\n";
+    } else {
+        setWarna(14);
+        cout << "MAX LEVEL REACHED!\n";
+        setWarna(7);
+    }
+
+    Sleep(1500);
 }
 
 void StatsCharacter() {
@@ -443,10 +669,9 @@ void StatsCharacter() {
     Character[2].rarity = "C";
     Character[2].unlock = false;
 
-    // RARE
     Character[3].nama = "Kevin_Hitam";
     Character[3].Base_Damage = 35;
-    Character[3].Base_Hp = 90;
+    Character[3].Base_Hp = 135;
     Character[3].def = 5;
     Character[3].crital_chance = 20;
     Character[3].crital_damage = 200;
@@ -478,7 +703,7 @@ void StatsCharacter() {
     Character[6].Base_Damage = 18;
     Character[6].Base_Hp = 200;
     Character[6].def = 30;
-    Character[6].crital_chance = 5;
+    Character[6].crital_chance = 15;
     Character[6].crital_damage = 130;
     Character[6].ULT = "";
     Character[6].rarity = "R";
@@ -504,7 +729,6 @@ void StatsCharacter() {
     Character[8].rarity = "R";
     Character[8].unlock = false;
 
-    // SR (EPIC)
     Character[9].nama = "Hanip_Ninja";
     Character[9].Base_Damage = 45;
     Character[9].Base_Hp = 110;
@@ -535,7 +759,6 @@ void StatsCharacter() {
     Character[11].rarity = "SR";
     Character[11].unlock = false;
 
-    // SSR (LEGENDARY)
     Character[12].nama = "Marlong";
     Character[12].Base_Damage = 50;
     Character[12].Base_Hp = 200;
@@ -558,36 +781,166 @@ void StatsCharacter() {
 }
 
 void StatsMonster() {
-    Monster[0].nama = "Shadow_Fang";
-    Monster[0].Base_Damage = 10;
-    Monster[0].Base_Hp = 160;
-    Monster[0].def = 12;
-    Monster[0].crital_chance = 20;
-    Monster[0].crital_damage = 170;
-    Monster[0].level = 7;
-    Monster[0].aggression = 75;
-    Monster[0].isBoss = false;
-    Monster[0].design = R"MONSTER(
-        /\_/\  
-       ( o.o ) 
-        > ^ <  
-      /       \
-     /|       |\
-      |  |||  |
-      |  |||  |
-       \_____/
-     SHADOW FANG
-)MONSTER";
+    Monster[0].design = R"(
+          __
+     w  c(..)o   (
+      \_(-)    _)
+          /\   (
+         /()__)
+         w /|
+          | \
+ m  m )";
 
-    Monster[1].nama = "Ayam_Galak";
-    Monster[1].Base_Damage = 8;
+    Monster[1].design = R"(
+ _  (\ 
+(_ \ ( '> 
+  ) \/_)= 
+ (( )_ 
+)";
+
+    Monster[2].design = R"(
+   .-"""-.
+  /      o\
+ |    o   0).-.
+ |       .-;(_/     .-.
+  \     /  /)).---._|  `\   ,
+   '.  '  /((        `'-./ _/|
+     \  .'  )        .-.;`  /
+      '.             |  `\-'
+        '._        -'    /
+           `""--------` )";
+
+    Monster[3].design = R"(
+     \\
+      \\_
+      ( _\
+      / \__
+     / _/"
+    {\  )_
+      """ )";
+
+    Monster[4].design = R"(
+               __
+              / _)
+     .----./ /
+    /         /
+ __/ (  | (  |
+/_.-'||--|_| )";
+
+    Monster[5].design = R"(
+                       )/_
+              .--..---"-,--c
+        \L..'            .O)
+,-.     _.+  _  \..--( /           
+  `\.-''_.-' \ (      \      
+    `'''        `\__   /\
+                 ')_ )";
+
+    Monster[6].design = R"(
+                    __
+          .,-;-;-,. /'_\
+        ///|\\) /
+       '-<><><><>=/\
+     `//====//-'\_\
+        ""     ""    "" )";
+
+    Monster[7].design = R"(
+    O~O
+   (\")
+  ("o"/)
+  m`-'m'`---. )";
+
+    Monster[8].design = R"(
+       .'.'
+      '-'-.
+  .  (  o O)
+   \_ `  _,   _
+-._'.) ( ,-'
+     '-.O.'-..-.. 
+ ./\/\/ | \.-.
+        ;
+     ._/ )";
+
+    Monster[0].nama = "arem arem";
+    Monster[0].Base_Hp = 200;
+    Monster[0].Base_Damage = 8;
+    Monster[0].def = 2;
+    Monster[0].crital_chance = 30;
+    Monster[0].crital_damage = 120;
+    Monster[0].level = 1;
+    Monster[0].isBoss = false;
+
+    Monster[1].nama = "whiskas";
     Monster[1].Base_Hp = 100;
-    Monster[1].def = 5;
-    Monster[1].crital_chance = 10;
-    Monster[1].crital_damage = 130;
-    Monster[1].level = 2;
-    Monster[1].aggression = 60;
+    Monster[1].Base_Damage = 12;
+    Monster[1].def = 6;
+    Monster[1].crital_chance = 5;
+    Monster[1].crital_damage = 120;
+    Monster[1].level = 3;
     Monster[1].isBoss = false;
+
+    Monster[2].nama = "Nadragong";
+    Monster[2].Base_Hp = 300;
+    Monster[2].Base_Damage = 25;
+    Monster[2].def = 15;
+    Monster[2].crital_chance = 10;
+    Monster[2].crital_damage = 140;
+    Monster[2].level = 5;
+    Monster[2].isBoss = true;
+
+    Monster[3].nama = "Wong Silver";
+    Monster[3].Base_Hp = 180;
+    Monster[3].Base_Damage = 22;
+    Monster[3].def = 10;
+    Monster[3].crital_chance = 20;
+    Monster[3].crital_damage = 150;
+    Monster[3].level = 7;
+    Monster[3].isBoss = false;
+
+    Monster[4].nama = "KaKangkung";
+    Monster[4].Base_Hp = 280;
+    Monster[4].Base_Damage = 26;
+    Monster[4].def = 22;
+    Monster[4].crital_chance = 8;
+    Monster[4].crital_damage = 130;
+    Monster[4].level = 9;
+    Monster[4].isBoss = false;
+
+    Monster[5].nama = "Ikan Lohan";
+    Monster[5].Base_Hp = 650;
+    Monster[5].Base_Damage = 45;
+    Monster[5].def = 35;
+    Monster[5].crital_chance = 12;
+    Monster[5].crital_damage = 150;
+    Monster[5].level = 12;
+    Monster[5].isBoss = true;
+
+    Monster[6].nama = "Gogoboy";
+    Monster[6].Base_Hp = 250;
+    Monster[6].Base_Damage = 40;
+    Monster[6].def = 15;
+    Monster[6].crital_chance = 30;
+    Monster[6].crital_damage = 180;
+    Monster[6].level = 14;
+    Monster[6].isBoss = false;
+
+    Monster[7].nama = "Jungkir Balik";
+    Monster[7].Base_Hp = 400;
+    Monster[7].Base_Damage = 55;
+    Monster[7].def = 20;
+    Monster[7].crital_chance = 15;
+    Monster[7].crital_damage = 160;
+    Monster[7].level = 17;
+    Monster[7].isBoss = false;
+
+    Monster[8].nama = "witchak cuk";
+    Monster[8].Base_Hp = 1200;
+    Monster[8].Base_Damage = 85;
+    Monster[8].def = 45;
+    Monster[8].crital_chance = 25;
+    Monster[8].crital_damage = 200;
+    Monster[8].level = 20;
+    Monster[8].isBoss = true;
 }
 
 void IsiData() {
@@ -600,95 +953,94 @@ void IsiData() {
 // ===== LORE =====
 void lore() {
     system("cls");
-
     setWarna(11);
     ketik("LUMINARA — 20XX\n", 50);
-
     setWarna(7);
     ketik("11 September\n\n", 50);
     tunggu(800);
 
-    ketik("Di dunia hewan dimana semua damai...\n\n");
-    tunggu(1000);
+    ketik("Dunia hewan lagi damai banget...\n");
+    ketik("Damai sampe bikin orang pengen demo.\n\n");
+    tunggu(900);
 
-    ketik("Lalu...\n\n");
-    tunggu(700);
-
-    setWarna(12);
-    ketik("DUARRR!!!\n\n", 80);
-    Beep(750, 200);
+    ketik("Tiba-tiba...\n\n");
     tunggu(500);
+    setWarna(12);
+    ketik("DUARRR!!!\n\n", 110);
+    tunggu(400);
 
     setWarna(14);
-    ketik("Langit retak.\n\n");
-    tunggu(800);
+    ketik("Langit retak parah.\n");
+    ketik("Kayak infrastruktur pemerintah yang dibiayain APBN.\n\n");
+    tunggu(900);
 
     setWarna(13);
-    ketik("Bukan sekadar ledakan...\n");
-    ketik("sesuatu... terbuka.\n\n");
+    ketik("Semua hewan pada panik:\n");
+    ketik("\"Ini serangan musuh?\n");
+    ketik("Atau proyek pemerintah yang molor lagi?\"\n\n");
     tunggu(1000);
 
     setWarna(11);
-    ketik("Cahaya aneh menyembur keluar.\n");
-    ketik("Bumi bergetar.\n\n");
-    tunggu(1000);
-
-    setWarna(7);
-    ketik("Naluri berubah.\n\n");
+    ketik("Ternyata bukan meteor, bukan perang...\n");
+    ketik("Tapi Rift.\n\n");
     tunggu(800);
-
-    setWarna(12);
-    ketik("Makhluk yang dulu jinak...\n");
-    ketik("menjadi liar.\n\n");
-    tunggu(1000);
-
-    ketik("Sebagian... berubah menjadi sesuatu yang lebih buruk.\n\n");
-    tunggu(1000);
 
     setWarna(4);
-    ketik("Monster.\n\n", 60);
-    tunggu(1000);
+    ketik("RIFT.\n\n", 130);
+    tunggu(900);
 
-    setWarna(10);
-    ketik("Namun tidak semua terpengaruh.\n\n");
-    tunggu(1000);
-
-    ketik("Beberapa tetap sadar.\n\n");
+    setWarna(7);
+    ketik("Dari dalam Rift keluar monster-monster.\n");
+    ketik("Ada yang imut, ada yang langsung ngamuk.\n\n");
     tunggu(800);
 
-    ketik("Mereka bangkit...\n");
-    ketik("dengan kekuatan yang tidak seharusnya dimiliki.\n\n");
-    tunggu(1200);
+    setWarna(4);
+    ketik("MONSTER.\n\n", 100);
+    tunggu(700);
+
+    setWarna(10);
+    ketik("Tapi ada juga yang santai ngeliat Rift itu...\n");
+    ketik("sambil bilang:\n\n");
+    tunggu(900);
 
     setWarna(14);
-    ketik("Mereka disebut...\n\n");
+    ketik("\"Masuk aja lah, lebih berguna daripada nunggu bansos.\"\n\n", 70);
     tunggu(1000);
-
-    setWarna(13);
-    ketik("FERAL AWAKENED\n\n", 80);
-    tunggu(1500);
 
     setWarna(7);
-    ketik("Dan sejak hari itu...\n\n");
-    tunggu(1000);
+    ketik("Dan mereka gas masuk.\n");
+    ketik("Karena di dunia luar, gaji naik doang 2%, pajak naik 200%.\n\n");
+    tunggu(1100);
 
-    ketik("Dunia tidak pernah sama lagi...\n\n");
-    tunggu(1500);
+    ketik("Di dalam Rift, semakin dalam semakin susah.\n");
+    ketik("Mirip banget sama birokrasi pemerintah.\n\n");
+    tunggu(900);
 
     setWarna(11);
-    ketik("Dan kamu...\n\n", 60);
+    ketik("Dan kamu...\n", 60);
+    tunggu(700);
+    ketik("apa yaaa...\n");
+    ketik("Kamu adalah KEEPER.\n\n");
+    tunggu(900);
+
+    setWarna(14);
+    ketik("KEEPER.\n\n", 100);
     tunggu(800);
 
-    setWarna(10);
-    ketik("adalah Keeper mereka.\n", 80);
-
     setWarna(7);
+    ketik("Tugasmu:\n");
+    ketik("- Masuk Rift\n");
+    ketik("- Naik Floor\n");
+    ketik("- Jangan mati konyol kayak janji pemerintah\n\n");
+    tunggu(1100);
 
-    tunggu(1500);
-    cout << "\n\nTekan ENTER untuk lanjut...";
-    // FIXED: ganti cin.ignore() + cin.get() dengan pause()
+    setWarna(12);
+    ketik("Kalo mati?\n");
+    ketik("Ulang lagi bro. Paling cuma rugi 5 tahun hidup, sama kayak nunggu reformasi.\n\n");
+    tunggu(900);
+
+    cout << "\n\nTekan ENTER kalo mental lu udah siap dihancurin lebih parah dari ekonomi negara...";
     pause();
-
     system("cls");
 }
 
@@ -714,7 +1066,7 @@ void Logo() {
 )";
         cout << "Option darling? ";
         cin >> pilih1;
-        cin.ignore(1000, '\n'); // FIXED: clear buffer setelah cin >>
+        cin.ignore(1000, '\n');
     } else {
         cout << R"(
 +-----------------------------------------------+
@@ -731,7 +1083,7 @@ void Logo() {
 )";
         cout << "Option darling? ";
         cin >> pilih;
-        cin.ignore(1000, '\n'); // FIXED: clear buffer setelah cin >>
+        cin.ignore(1000, '\n');
     }
     Cek.close();
 
@@ -744,8 +1096,11 @@ void Logo() {
         tunggu(1000);
         setWarna(7);
         cin >> currentplayer.username;
-        cin.ignore(1000, '\n'); // FIXED: clear buffer setelah cin >>
+        cin.ignore(1000, '\n');
         Lore << currentplayer.username << " ";
+      
+        Lore << "level:" << currentplayer.level << " ";
+        Lore << "xp:" << currentplayer.xp << " ";
         Lore.close();
     }
 
@@ -756,7 +1111,10 @@ void Logo() {
         ifstream Load("save.txt");
         string token;
         while (Load >> token) {
-            if (token != "Lore_True" && token != "Tutor_True" && token.substr(0,6) != "primo:") {
+            if (token != "Lore_True" && token != "Tutor_True"
+                && token.substr(0,6) != "primo:"
+                && token.substr(0,6) != "level:"   // FIXED: skip token level
+                && token.substr(0,3) != "xp:") {   // FIXED: skip token xp
                 bool ituKarakter = false;
                 for (int i = 0; i < 14; i++)
                     if (Character[i].nama == token) { ituKarakter = true; break; }
@@ -780,34 +1138,103 @@ void Logo() {
 
 // ===== TUTORIAL =====
 void Tutorial1() {
+    system("cls");
+
     setWarna(10);
-    ketik("TUTORIAL\n\n", 40);
+    ketik("=== TUTORIAL (BIAR GA DIBANTAI DI FLOOR 1) ===\n\n", 40);
     tunggu(500);
 
     setWarna(7);
-    ketik("1. Kamu akan bertarung secara turn-based.\n");
-    ketik("2. Pilih aksi saat giliranmu:\n");
-    ketik("   - Fight  : menyerang musuh\n");
-    ketik("   - Defend : mengurangi damage\n\n");
+    ketik("Oke denger ya...\n");
+    ketik("Game ini turn-based.\n");
+    ketik("Artinya kamu mukul, musuh mukul balik.\n\n");
     tunggu(800);
 
-    ketik("3. Setiap karakter punya:\n");
-    ketik("   - HP\n");
-    ketik("   - Damage\n");
-    ketik("   - Defense\n");
-    ketik("   - Critical Chance\n\n");
+    ketik("Simple kan?\n");
+    ketik("Iya... tapi ga sesimple itu.\n\n");
     tunggu(800);
 
-    ketik("4. Kalahkan musuh untuk mendapatkan reward.\n");
-    ketik("5. Gunakan reward untuk mendapatkan karakter baru.\n\n");
+    setWarna(11);
+    ketik("=== ACTION ===\n\n", 40);
+    setWarna(7);
+
+    ketik("Pas giliran lu:\n");
+    ketik("- Fight  : pukul musuh (no brain mode)\n");
+    ketik("- Defend : tahan damage + bisa nge-reflect\n");
+    ketik("- ULT    : jurus pamungkas\n\n");
+    tunggu(1000);
+
+    setWarna(12);
+    ketik("=== ULT SYSTEM (INI YANG BIKIN LU GG) ===\n\n", 40);
+    setWarna(7);
+
+    ketik("ULT ga bisa dipake sembarangan.\n");
+    ketik("Lu butuh POINT.\n\n");
+
+    ketik("Cara dapet point:\n");
+    ketik("- CRIT (pukulan hoki anak RNG)\n");
+    ketik("- DEFLECT (balikin damage kayak sigma)\n\n");
+    tunggu(1000);
+
+    setWarna(14);
+    ketik("Kalo point full...\n");
+    ketik("ULT SIAP DI-SPAM!\n\n", 50);
     tunggu(800);
+
+    setWarna(13);
+    ketik("=== DEFLECT (MEKANIK GACOR) ===\n\n", 40);
+    setWarna(7);
+
+    ketik("Defend itu bukan cuma ngurangin damage.\n");
+    ketik("Kadang lu bisa DEFLECT.\n\n");
+
+    ketik("Artinya:\n");
+    ketik("Musuh nyerang...\n");
+    ketik("LU BALIKIN!\n\n");
+    tunggu(1000);
 
     setWarna(10);
-    ketik("Selesai. Siap bertarung?.\n\n", 50);
+    ketik("Dan dapet POINT ULT juga \n\n", 50);
+    tunggu(800);
+
+    setWarna(11);
+    ketik("=== GACHA (JUDI HALAL) ===\n\n", 40);
+    setWarna(7);
+
+    ketik("Abis menang, lu dapet reward.\n");
+    ketik("Kadang dapet PRIMOGEMS.\n\n");
+
+    ketik("Primogems buat apa?\n");
+    ketik("GACHA dong.\n\n");
+
+    ketik("Lu bisa dapet:\n");
+    ketik("- Common (biasa aja)\n");
+    ketik("- Rare (lumayan)\n");
+    ketik("- Epic (mulai sakit)\n");
+    ketik("- Legendary (broken anjing)\n\n");
+    tunggu(1200);
+
+    setWarna(14);
+    ketik("Semakin langka → semakin ngawur skillnya.\n\n", 50);
+    tunggu(800);
+
+    setWarna(12);
+    ketik("=== TUJUAN HIDUP LU SEKARANG ===\n\n", 40);
+    setWarna(7);
+
+    ketik("Masuk ke Rift.\n");
+    ketik("Naik Floor.\n");
+    ketik("Jangan mati.\n\n");
+
+    ketik("Itu aja.\n\n");
+    tunggu(1000);
+
+    setWarna(10);
+    ketik("Kalo mati?\n");
+    ketik("Ya ulang lagi bro nyuk\n\n", 60);
 
     setWarna(7);
-    ketik("Tekan ENTER untuk lanjut ke Test Fight...");
-    // FIXED: ganti cin.ignore() + cin.get() dengan pause()
+    ketik("Tekan ENTER kalo lu udah siap mental...");
     pause();
 
     system("cls");
@@ -833,10 +1260,12 @@ void BattleUI(int HpKawan, int HpMusuh, int UltPoin, int MarkStatus, int MarkTur
         setWarna(12);
         cout << "[3.ULT]   ";
     }
-    setWarna(13); cout << "[4.INVENTORY]";
+    setWarna(13); cout << "[4.FLEEEEEE] ";
     setWarna(7);  cout << "   |\n";
     cout << pad << "|                                                      |\n";
     cout << pad << "+------------------------------------------------------+\n";
+    // FIXED: tampilin level player di battle UI juga
+    cout << "Level: " << currentplayer.level << "  |  ";
     cout << "HP Kamu: " << HpKawan << "  |  HP Musuh: " << HpMusuh << "  |  ULT Point: " << UltPoin << "/4\n";
     if (ReviveK) {
         cout << "MAX TURN " << MaxTurnK << "/5";
@@ -1081,7 +1510,8 @@ void doULT(int CharacterKawan, int CharacterMusuh, int &HpKawan, int &HpMusuh, b
 void AI(int CharacterMonster, int &HpKawan, int &HpMusuh, bool Defend, int CharacterKawan, int &PointULT, int &BuffSawit, int &BuffAren, bool ReviveK, bool MarlongMode, bool DarkForce) {
     int Buff = 0;
     int BuffA = 0;
-
+    int damage;
+    int roll;
     if (Defend) {
         if (BuffAren > 0) {
             cout << "50% DEFEND + 20% DEFLECT\n";
@@ -1090,11 +1520,16 @@ void AI(int CharacterMonster, int &HpKawan, int &HpMusuh, bool Defend, int Chara
             BuffAren--;
         }
 
-        int roll = rand() % 100 + 1;
+        roll = rand() % 100 + 1;
         float reduction = (Character[CharacterKawan].def + BuffA) / 100.0f;
         if (reduction > 0.8f) reduction = 0.8f;
-
-        int damage = Monster[CharacterMonster].Base_Damage;
+        roll = rand() % 100 + 1;
+        if (roll <= Monster[CharacterMonster].crital_chance) {
+        damage = (int)(Monster[CharacterMonster].Base_Damage * (Monster[CharacterMonster].crital_damage / 100.0));
+        }
+        else {
+        damage = Monster[CharacterMonster].Base_Damage;  
+        }
         int finalDamage = (int)(damage * (1 - reduction));
         if (finalDamage < 1) finalDamage = 1;
 
@@ -1119,8 +1554,16 @@ void AI(int CharacterMonster, int &HpKawan, int &HpMusuh, bool Defend, int Chara
         }
         Sleep(1000);
     } else {
+        roll = rand() % 100 + 1;
+        if (roll <= Monster[CharacterMonster].crital_chance) {
+        damage = (int)(Monster[CharacterMonster].Base_Damage * (Monster[CharacterMonster].crital_damage / 100.0));
+        HpKawan -= damage;
+        cout << "CRITICAL HIT MONSTER!! " << damage;
+        }
+        else {
         cout << "Musuh menyerang! Damage: " << Monster[CharacterMonster].Base_Damage << "\n";
         HpKawan -= Monster[CharacterMonster].Base_Damage;
+        }
         Sleep(1000);
     }
 }
@@ -1139,7 +1582,7 @@ void AttackCharacter(int Aksi, int &HpKawan, int &HpMusuh, int CharacterKawan, b
         printSideBySide(Character[CharacterKawan].design, Monster[CharacterMusuh].design, 30);
         BattleUI(HpKawan, HpMusuh, PointULT, MarkStatus, MarkTurn, Marked, ReviveK, JumlahRevive, MaxTurnK, MarlongMode, JumlahMarlong, MarlongTurn, DarkForce, DarkForceTurn);
         cin >> Aksi;
-        cin.ignore(1000, '\n'); // FIXED: clear buffer setelah cin >> Aksi
+        cin.ignore(1000, '\n');
 
         BuffK = 1; BuffR = 1; BuffRcrit = 0;
 
@@ -1212,7 +1655,14 @@ void AttackCharacter(int Aksi, int &HpKawan, int &HpMusuh, int CharacterKawan, b
                 Sleep(1000);
             }
             continue;
-        } else {
+        } 
+          else if (Aksi == 4)  {
+            cout << "KABURRRR";
+            Sleep(1000);
+            HpKawan = 0;
+            break;
+          }
+        else {
             cout << "Pilihan tidak valid!\n";
             Sleep(1000);
         }
@@ -1220,7 +1670,7 @@ void AttackCharacter(int Aksi, int &HpKawan, int &HpMusuh, int CharacterKawan, b
 }
 
 // ===== FIGHT =====
-void Fight(int PilihKarakter,int PilihMusuh) {
+bool Fight(int PilihKarakter,int PilihMusuh) {
     srand((unsigned int)time(0));
 
     int SelectC = 0;
@@ -1249,26 +1699,12 @@ void Fight(int PilihKarakter,int PilihMusuh) {
     bool DarkForce = false;
     int DarkForceTurn = 0;
 
-    // Reset global flags untuk fight baru
     MarkedBool = true;
     MarlongBool = true;
 
-    system("cls");
-    setWarna(14);
-    cout << "=== PILIH KARAKTER ===\n";
-    setWarna(7);
-    //cout << "[COMMON]  0.Ireng_Jogja  1.Laba_Laba_Sunda  2.Sawit_Bantul\n";
-    //cout << "[RARE]    3.Kevin_Hitam  4.Rigby_Wonosobo  5.Aren_Gentong  6.Arpin_Gontor  7.Mister_orange  8.Slot_Gacor\n";
-    //cout << "[EPIC]    9.Hanip_Ninja  10.Mr_Kucing  11.Imissher_Kaliurang\n";
-    //cout << "[LEGEND]  12.Marlong  13.Anakin_Maguwoharjo\n";
-    //cout << "Pilih Fighter (0-13): ";
-   // cin >> SelectC;
     SelectC = PilihKarakter;
-    //cout << "Pilih Musuh (hanya 0 = Shadow_Fang): ";
-    //cin >> SelectV;
     SelectV = PilihMusuh;
-    cin.ignore(1000, '\n'); // FIXED: clear buffer setelah cin >>
-
+  
     TempHPC = Character[SelectC].Base_Hp;
     TempHPV = Monster[SelectV].Base_Hp;
     system("cls");
@@ -1357,9 +1793,11 @@ void Fight(int PilihKarakter,int PilihMusuh) {
     if (!Kawan) {
         setWarna(12);
         cout << "\n=== KAMU KALAH! ===\n";
+        return false;
     } else {
         setWarna(10);
         cout << "\n=== KAMU MENANG! ===\n";
+        return true;
     }
     setWarna(7);
     cout << "\n";
@@ -1373,66 +1811,89 @@ void TestFight() {
     ketik("Saatnya cobain battle pertama kamu, Keeper!\n\n");
     tunggu(1000);
     ketik("Tekan ENTER untuk mulai...");
-    // FIXED: ganti cin.ignore() + cin.get() dengan pause()
     pause();
-    Fight(1,1);
+    Fight(1,0);
 }
 
-// 
-
-
-
-
-
-
-
 // ===== GACHA =====
-// Format save.txt: token dipisah spasi
-// Lore_True Tutor_True NamaPlayer primo:100 Ireng_Jogja Marlong ...
+// Format save.txt: Lore_True Tutor_True NamaPlayer level:1 xp:0 primo:100 Ireng_Jogja 
 void simpanData() {
-    // Baca dulu flag & nama yang sudah ada di save.txt
     bool adaLore = false, adaTutor = false;
     string namaPlayer = "";
     {
         ifstream f("save.txt");
         string token;
         while (f >> token) {
-            if (token == "Lore_True")  adaLore  = true;
+            if (token == "Lore_True")       adaLore  = true;
             else if (token == "Tutor_True") adaTutor = true;
-            else if (token.substr(0,6) != "primo:" ) {
-                // cek bukan nama karakter
+            else if (token.substr(0,6) != "primo:"
+                  && token.substr(0,6) != "level:"
+                  && token.substr(0,3) != "xp:"
+                  && token.substr(0,10) != "lvlunlock:") {
                 bool ituKarakter = false;
                 for (int i = 0; i < 14; i++)
-                    if (Character[i].nama == token) { ituKarakter = true; break; }
+                if (Character[i].nama == token) { ituKarakter = true; break; }
                 if (!ituKarakter) namaPlayer = token;
             }
         }
     }
-    // Tulis ulang seluruh save.txt
+    
     ofstream f("save.txt");
     if (adaLore)  f << "Lore_True ";
     if (adaTutor) f << "Tutor_True ";
     if (namaPlayer != "") f << namaPlayer << " ";
+    // FIXED: simpan level & xp
+    f << "level:" << currentplayer.level << " ";
+    f << "xp:" << currentplayer.xp << " ";
     f << "primo:" << currentplayer.primo << " ";
     for (int i = 0; i < 14; i++)
         if (Character[i].unlock) f << Character[i].nama << " ";
+    for (int i = 1; i <= 13; i++)
+        if (currentplayer.LevelUnlock[i]) f << "lvlunlock:" << i << " ";
     f.close();
 }
 
 void loadData() {
     ifstream f("save.txt");
-    if (!f) { currentplayer.primo = 10; return; }
+    if (!f) { currentplayer.primo = 10; currentplayer.level = 1; currentplayer.xp = 0; return; }
+    
     string token;
     bool primoKetemu = false;
+    
     while (f >> token) {
-        if (token.substr(0,6) == "primo:") {
+        if (token == "Lore_True" || token == "Tutor_True") {
+            // skip, tidak perlu diproses
+        }
+        else if (token.substr(0,6) == "primo:") {
             currentplayer.primo = stoi(token.substr(6));
             primoKetemu = true;
-        } else {
-            for (int i = 0; i < 14; i++)
-                if (Character[i].nama == token) Character[i].unlock = true;
+        }
+        else if (token.substr(0,6) == "level:") {
+            currentplayer.level = stoi(token.substr(6));
+        }
+        else if (token.substr(0,3) == "xp:") {
+            currentplayer.xp = stoi(token.substr(3));
+        }
+        else if (token.substr(0,10) == "lvlunlock:") {
+            int idx = stoi(token.substr(10));
+            if (idx >= 1 && idx <= 13)
+                currentplayer.LevelUnlock[idx] = true;
+        }
+        else {
+            // Cek dulu apakah ini nama karakter
+            bool ituKarakter = false;
+            for (int i = 0; i < 14; i++) {
+                if (Character[i].nama == token) {
+                    Character[i].unlock = true;
+                    ituKarakter = true;
+                    break;
+                }
+            }
+            // Kalau bukan karakter, baru anggap nama player
+            if (!ituKarakter) currentplayer.username = token;
         }
     }
+    
     if (!primoKetemu) currentplayer.primo = 10;
     f.close();
 }
@@ -1468,8 +1929,7 @@ void prosesHasil(string rarity, int& primo) {
     cout << "Nama   : " << nama << "\n";
 
     if (sudahPunya(nama)) {
-        cout << "Kamu sudah punya karakter ini! +10 Primo sebagai gantinya.\n";
-        primo += 10;
+        cout << "Kamu sudah punya karakter ini\n";
     } else {
         cout << "Selamat! Karakter baru masuk koleksi!\n";
         Character[idx].unlock = true;
@@ -1496,7 +1956,7 @@ void gachaPity(int pity, int& primo) {
     if (pity >= 50) cout << "  d. Legendary (SSR)\n";
     cout << "Pilih (a/b/c/d): ";
     char pilih; cin >> pilih;
-    cin.ignore(1000, '\n'); // FIXED: clear buffer setelah cin >>
+    cin.ignore(1000, '\n');
 
     string rarity = "";
     if      (pilih == 'a' && pity >= 10) rarity = "C";
@@ -1509,7 +1969,7 @@ void gachaPity(int pity, int& primo) {
 }
 
 void gacha(int& primo) {
-    int SSR = 5, SR = 20, R = 25;
+    int SSR = 1, SR = 8, R = 20;
     int pity = 0;
     char ulang;
 
@@ -1530,7 +1990,7 @@ void gacha(int& primo) {
         cout << "Pilih: ";
 
         int opsi; cin >> opsi;
-        cin.ignore(1000, '\n'); // FIXED: clear buffer setelah cin >>
+        cin.ignore(1000, '\n');
         if (opsi == 3) break;
 
         primo -= 10;
@@ -1560,7 +2020,8 @@ void gacha(int& primo) {
 
         cout << "\nGacha lagi? (y/n): ";
         cin >> ulang;
-        cin.ignore(1000, '\n'); // FIXED: clear buffer setelah cin >>
+        system("cls");
+        cin.ignore(1000, '\n');
         if (ulang == 'n' || ulang == 'N') break;
     }
 
@@ -1587,14 +2048,11 @@ void daftarchara() {
 
     for (int i = 0; i < 14; i++) {
         cout << "\n====================================\n";
-
         cout << "[" << Character[i].rarity << "] " << Character[i].nama;
-
         if (Character[i].unlock)
             cout << " (UNLOCKED)\n";
         else
             cout << " (LOCKED)\n";
-
         cout << "------------------------------------\n";
         cout << "HP          : " << Character[i].Base_Hp << "\n";
         cout << "Damage      : " << Character[i].Base_Damage << "\n";
@@ -1602,7 +2060,6 @@ void daftarchara() {
         cout << "Crit Chance : " << Character[i].crital_chance << "%\n";
         cout << "Crit Damage : " << Character[i].crital_damage << "%\n";
         cout << "ULT         : " << Character[i].ULT << "\n";
-
         if (Character[i].unlock) {
             cout << "\n" << Character[i].design << "\n";
         } else {
@@ -1611,10 +2068,9 @@ void daftarchara() {
     }
 
     cout << "\n====================================\n";
-
     cout << "Ingin menampilkan data secara spesifik? (1/0)";
     cin >> pilih;
-    cin.ignore(1000, '\n'); // FIXED: clear buffer setelah cin >>
+    cin.ignore(1000, '\n');
     if (pilih == 1) tampilSort();
 }
 
@@ -1623,8 +2079,6 @@ void quickSort(int idx[], int low, int high, int mode) {
     if (low >= high) return;
 
     int pivot;
-    
-    // ambil pivot berdasarkan mode
     if (mode == 1) pivot = Character[idx[high]].Base_Hp;
     if (mode == 2) pivot = Character[idx[high]].Base_Damage;
     if (mode == 3) pivot = Character[idx[high]].def;
@@ -1635,14 +2089,13 @@ void quickSort(int idx[], int low, int high, int mode) {
 
     for (int j = low; j < high; j++) {
         int value;
-
         if (mode == 1) value = Character[idx[j]].Base_Hp;
         if (mode == 2) value = Character[idx[j]].Base_Damage;
         if (mode == 3) value = Character[idx[j]].def;
         if (mode == 4) value = Character[idx[j]].crital_chance;
         if (mode == 5) value = Character[idx[j]].crital_damage;
 
-        if (value > pivot) { // DESCENDING
+        if (value > pivot) {
             i++;
             int temp = idx[i];
             idx[i] = idx[j];
@@ -1673,7 +2126,7 @@ do {
     cout << "5. Crit Damage\n";
     cout << "Pilih: ";
     cin >> mode;
-    cin.ignore(1000, '\n'); // FIXED: clear buffer setelah cin >>
+    cin.ignore(1000, '\n');
 
     int idx[14];
     for (int i = 0; i < 14; i++) idx[i] = i;
@@ -1685,7 +2138,6 @@ do {
 
     for (int i = 0; i < 14; i++) {
         int k = idx[i];
-
         cout << "[" << Character[k].rarity << "] " << Character[k].nama
              << " | HP: " << Character[k].Base_Hp
              << " | DMG: " << Character[k].Base_Damage
@@ -1700,46 +2152,60 @@ do {
     
 }
 
-// ===== GAME MENU (setelah login) =====
+// ===== GAME MENU =====
 void GameMenu() {
     int pilih = 0;
     loadData();
+    // FIXED: apply upgrade sesuai level yang di-load
+    if (currentplayer.level > 1) UpgradeSystem();
+
     while (true) {
         system("cls");
         setWarna(11);
         cout << "\n  Selamat datang, Keeper " << currentplayer.username << "!\n";
-        cout << "  Primo: " << currentplayer.primo << "\n\n";
+        // FIXED: tampilkan level & xp di menu
+        cout << "  Level : " << currentplayer.level << "\n";
+        if (currentplayer.level < 30) {
+            cout << "  XP    : " << currentplayer.xp << "/" << xpTable[currentplayer.level + 1] << "\n";
+        } else {
+            cout << "  XP    : MAX LEVEL\n";
+        }
+        cout << "  Primo : " << currentplayer.primo << "\n\n";
         setWarna(7);
         cout << "+-------------------------------+\n";
         cout << "|          GAME MENU            |\n";
         cout << "+-------------------------------+\n";
-        cout << "| 1. Battle (Fight)             |\n";
-        cout << "| 2. Gacha                      |\n";
-        cout << "| 3. Koleksi                    |\n";
-        cout << "| 4. Daftar Karakter            |\n";
-        cout << "| 5. Keluar ke Main Menu        |\n";
+        cout << "| 1. Story Mode                 |\n";
+        cout << "| 2. Endless Mode               |\n";
+        cout << "| 3. Gacha                      |\n";
+        cout << "| 4. Koleksi                    |\n";
+        cout << "| 5. Daftar Karakter            |\n";
+        cout << "| 6. Keluar ke Main Menu        |\n";
         cout << "+-------------------------------+\n";
         cout << "Pilih: ";
         cin >> pilih;
-        cin.ignore(1000, '\n'); // FIXED: clear buffer setelah cin >>
+        cin.ignore(1000, '\n');
 
         if (pilih == 1) {
-            Fight(1,10);
+            StoryMode();
             cout << "Tekan ENTER untuk kembali ke menu...";
-            cin.get(); // FIXED: buffer sudah bersih, langsung cin.get()
-        } else if (pilih == 2) {
+            cin.get();
+        } 
+          else if (pilih == 2) {
+            EndlessMode();
+        }        
+          else if (pilih == 3) {
             gacha(currentplayer.primo);
             cout << "Tekan ENTER untuk kembali ke menu...";
-            cin.get(); // FIXED: buffer sudah bersih, langsung cin.get()
-        } else if (pilih == 3) {
+            cin.get();
+        } else if (pilih == 4) {
             koleksi();
             cout << "Tekan ENTER untuk kembali ke menu...";
-            cin.get(); // FIXED: buffer sudah bersih, langsung cin.get()
-        } else if (pilih == 4) {
+            cin.get();
+        } else if (pilih == 5) {
             daftarchara();
             cout << "Tekan ENTER untuk kembali ke menu...";
-             // FIXED: buffer sudah bersih, langsung cin.get()
-        } else if (pilih == 5) {
+        } else if (pilih == 6) {
             break;
         } else {
             cout << "Pilihan tidak valid!\n";
@@ -1750,16 +2216,17 @@ void GameMenu() {
 
 // ===== MAIN =====
 int main() {
+    // FIXED: level start dari 1 bukan 0
+    currentplayer.level = 1;
+    currentplayer.xp = 0;
+
     IsiData();
 
-    // Pastikan file save.txt ada
     ofstream File("save.txt", ios::app);
     File.close();
 
-    // Main menu / logo
     Logo();
 
-    // Cek apakah tutorial sudah pernah ditampilkan
     bool Tutor = true;
     {
         ifstream Tutorial("save.txt");
@@ -1776,15 +2243,12 @@ int main() {
 
     if (Tutor) {
         Tutorial1();
-        // Simpan flag tutorial
         ofstream SaveTutor("save.txt", ios::app);
         SaveTutor << "Tutor_True" << " ";
         SaveTutor.close();
-        // Test Fight langsung setelah tutorial
         TestFight();
     }
 
-    // Masuk ke game menu utama
     GameMenu();
 
     return 0;
