@@ -349,6 +349,146 @@ void IsiULT() {
     "Notes  : Comeback";
 }
 
+void InfoSystem() {
+    system("cls");
+    setWarna(11);
+    ketik("========================================\n", 5);
+    ketik("         FERAL AWAKENED - INFO\n", 5);
+    ketik("========================================\n\n", 5);
+
+    // ===== STAT UPGRADE SYSTEM =====
+    setWarna(14);
+    ketik("[ SISTEM UPGRADE STAT ]\n", 5);
+    setWarna(7);
+    ketik("Stat karakter naik otomatis setiap level up.\n", 5);
+    ketik("Rumus kenaikan dihitung dari level 1 s/d level sekarang.\n\n", 5);
+
+    ketik("  Rarity |  DMG  |   HP            |  DEF        | CRIT\n", 5);
+    ketik("  -------|-------|-----------------|-------------|------------------\n", 5);
+    ketik("  C      | +2/lv | +5 (lv genap)   | +2 (lv gnp) | +1 (kelipatan 5)\n", 5);
+    ketik("  R      | +2/lv | +10 (lv genap)  | +2 (lv gnp) | +1 (kelipatan 5)\n", 5);
+    ketik("  SR     | +3/lv | +15 (lv genap)  | +2 (lv gnp) | +2 (kelipatan 5)\n", 5);
+    ketik("  SSR    | +4/lv | +20 (lv genap)  | +3 (lv gnp) | +3 (kelipatan 5)\n\n", 5);
+
+    ketik("  Contoh di level 10 rarity SSR:\n", 5);
+    ketik("  DMG  : +4 x 10 = +40\n", 5);
+    ketik("  HP   : +20 x 5 (lv 2,4,6,8,10) = +100\n", 5);
+    ketik("  DEF  : +3 x 5 (lv 2,4,6,8,10) = +15\n", 5);
+    ketik("  CRIT : +3 x 2 (lv 5,10) = +6\n\n", 5);
+
+    // ===== BATTLE SYSTEM =====
+    setWarna(14);
+    ketik("[ SISTEM BATTLE ]\n", 5);
+    setWarna(7);
+    ketik("Turn-based. Kamu aksi duluan, lalu musuh balas.\n\n", 5);
+
+    ketik("  [1] FIGHT  - Serang musuh\n", 5);
+    ketik("  [2] DEFEND - Bertahan & kemungkinan deflect\n", 5);
+    ketik("  [3] ULT    - Skill khusus (butuh 4 ULT Point)\n", 5);
+    ketik("  [4] FLEE   - Kabur (HP jadi 0, dianggap kalah)\n\n", 5);
+
+    // ===== CRIT SYSTEM =====
+    setWarna(14);
+    ketik("[ SISTEM CRITICAL HIT ]\n", 5);
+    setWarna(7);
+    ketik("Tiap serangan ada chance untuk critical hit.\n", 5);
+    ketik("Damage crit = Base_Damage * (Crit_Damage / 100)\n", 5);
+    ketik("Crit chance max = 95%\n\n", 5);
+
+    // ===== DEFEND & DEFLECT =====
+    setWarna(14);
+    ketik("[ SISTEM DEFEND & DEFLECT ]\n", 5);
+    setWarna(7);
+    ketik("Saat DEFEND, damage dikurangi berdasarkan DEF:\n", 5);
+    ketik("Reduction = DEF / 100 (max 80%)\n\n", 5);
+
+    ketik("Chance DEFLECT base = 50%\n", 5);
+    ketik("Jika deflect, damage tetap masuk tapi\n", 5);
+    ketik("70% damage direflect balik ke musuh.\n\n", 5);
+
+    ketik("Buff yang mempengaruhi deflect:\n", 5);
+    ketik("- Sawit ULT  : +20% chance deflect (4 turn)\n", 5);
+    ketik("- Aren ULT   : +20% chance deflect + 50% damage reduction (3 turn)\n\n", 5);
+
+    // ===== ULT POINT =====
+    setWarna(14);
+    ketik("[ SISTEM ULT POINT ]\n", 5);
+    setWarna(7);
+    ketik("ULT Point didapat dari:\n", 5);
+    ketik("- Critical hit saat FIGHT\n", 5);
+    ketik("- Berhasil DEFLECT saat DEFEND\n", 5);
+    ketik("ULT aktif saat poin = 4\n", 5);
+    ketik("Catatan: poin TIDAK naik saat buff aktif\n", 5);
+    ketik("(Kevin, Rigby, Mark, Revive, Marlong, DarkForce)\n\n", 5);
+
+    // ===== MARKED SYSTEM =====
+    setWarna(14);
+    ketik("[ MARKED SYSTEM - Hanip Ninja ]\n", 5);
+    setWarna(7);
+    ketik("Fase 1: Aktifkan MARKED (musuh mulai di-stack)\n", 5);
+    ketik("Tiap turn ada 30% chance stack +1 (max 6 stack)\n", 5);
+    ketik("Batas waktu: 10 turn, lebih dari itu MARKED gagal\n\n", 5);
+
+    ketik("Fase 2: Execute dengan ULT lagi\n", 5);
+    ketik("Stack 0 = x1.2  |  Stack 1 = x1.5\n", 5);
+    ketik("Stack 2 = x2.0  |  Stack 3 = x2.5\n", 5);
+    ketik("Stack 4 = x3.0  |  Stack 5 = x3.5\n", 5);
+    ketik("Stack 6 = x4.0\n", 5);
+    ketik("Damage = Base_Damage * (Crit_Damage/100) * multiplier\n\n", 5);
+
+    // ===== REVIVE SYSTEM =====
+    setWarna(14);
+    ketik("[ REVIVE SYSTEM - Mr. Kucing ]\n", 5);
+    setWarna(7);
+    ketik("Saat ULT aktif, mode revive menyala.\n", 5);
+    ketik("Jika HP <= 0, otomatis bangkit dengan 50% HP.\n", 5);
+    ketik("Maksimal 3x revive, dan hanya aktif 5 turn.\n\n", 5);
+
+    // ===== MARLONG SYSTEM =====
+    setWarna(14);
+    ketik("[ MARLONG SYSTEM - Marlong ]\n", 5);
+    setWarna(7);
+    ketik("Setelah ULT aktif, tiap crit menambah HEAT (max 6).\n", 5);
+    ketik("Durasi 8 turn.\n", 5);
+    ketik("Di turn ke-8, meledak:\n", 5);
+    ketik("Damage = Base_Damage * jumlah HEAT\n\n", 5);
+
+    // ===== DARK FORCE =====
+    setWarna(14);
+    ketik("[ DARK FORCE - Anakin Maguwoharjo ]\n", 5);
+    setWarna(7);
+    ketik("Multiplier damage berdasarkan HP saat ini:\n", 5);
+    ketik("HP < 100% : x1.5\n", 5);
+    ketik("HP < 70%  : x2.0\n", 5);
+    ketik("HP < 50%  : x2.5\n", 5);
+    ketik("HP < 30%  : x3.0\n", 5);
+    ketik("Durasi: 8 turn\n\n", 5);
+
+    // ===== ENDLESS MODE =====
+    setWarna(14);
+    ketik("[ ENDLESS MODE ]\n", 5);
+    setWarna(7);
+    ketik("Musuh makin kuat tiap wave (+0.2x multiplier).\n", 5);
+    ketik("Reward tiap wave: +50 XP * multiplier + 5 Primo.\n\n", 5);
+
+    // ===== GACHA =====
+    setWarna(14);
+    ketik("[ GACHA ]\n", 5);
+    setWarna(7);
+    ketik("Biaya: 10 Primo per gacha\n", 5);
+    ketik("Rate:\n", 5);
+    ketik("SSR :  1%\n", 5);
+    ketik("SR  :  8%\n", 5);
+    ketik("R   : 20%\n", 5);
+    ketik("C   : 71%\n\n", 5);
+
+    setWarna(11);
+    ketik("========================================\n", 5);
+    setWarna(7);
+    ketik("Tekan ENTER untuk kembali...", 5);
+
+    cin.get();
+}
 
 void initCharacter() {
     Character[0].design = R"(    \\_//
@@ -512,6 +652,13 @@ int calcDef(int level, int growth) {
     return add + calcDef(level - 1, growth);
 }
 
+int calcHP(int level, int growth) {
+    if (level == 0) return 0;
+    int add = 0;
+    if (level % 2 == 0) add = growth;
+    return add + calcHP(level - 1, growth);
+}
+
 // ===== UPGRADE SYSTEM
 void UpgradeSystem() {
     int lvl = currentplayer.level;
@@ -523,27 +670,31 @@ void UpgradeSystem() {
             dmg  = calcDamage(lvl, 2);
             crit = calcCrit(lvl, 1);
             def  = calcDef(lvl, 2);
+            hp = calcHP(lvl, 5);
         }
         else if (Character[i].rarity == "R") {
             dmg  = calcDamage(lvl, 2);
             crit = calcCrit(lvl, 1);
             def  = calcDef(lvl, 2);
+            hp = calcHP(lvl, 5);
         }
         else if (Character[i].rarity == "SR") {
             dmg  = calcDamage(lvl, 3);
             crit = calcCrit(lvl, 2);
             def  = calcDef(lvl, 2);
+            hp = calcHP(lvl, 10);
         }
         else if (Character[i].rarity == "SSR") {
             dmg  = calcDamage(lvl, 4);
             crit = calcCrit(lvl, 3);
             def  = calcDef(lvl, 3);
+            hp = calcHP(lvl, 15);
         }
 
-        Character[i].Base_Damage    += (dmg / max(lvl, 1));
-        Character[i].Base_Hp        += 5;
-        Character[i].def            += (def / max(lvl, 1));
-        Character[i].crital_chance  = min(Character[i].crital_chance + (crit / max(lvl, 1)), 95);
+        Character[i].Base_Damage    += dmg;
+        Character[i].Base_Hp += hp;
+        Character[i].def            += def;
+        Character[i].crital_chance  += crit;
     }
 }
 
@@ -598,7 +749,7 @@ void AddXP(int amount) {
             currentplayer.level++;
 
             setWarna(14);
-            cout << "LEVEL UP! → Level " << currentplayer.level << "\n";
+            cout << "LEVEL UP! Level " << currentplayer.level << "\n";
             setWarna(7);
 
             UpgradeSystem();
@@ -1038,6 +1189,12 @@ void IsiData() {
 // ===== LORE =====
 void lore() {
     system("cls");
+    ketik("TUGAS INI ADALAH SEBAGAI PROJEK AKHIR KITA ACID DAN AZRA\n", 60);
+    tunggu(700);
+    setWarna(4);
+    ketik("SEMOGA TUHAN MEMBANTU KITA SEMUA", 120);
+    tunggu(7000);
+    system("cls");
 
     setWarna(11);
     ketik("LUMINARA — ???\n\n", 50);
@@ -1305,7 +1462,6 @@ void BattleUI(int HpKawan, int HpMusuh, int UltPoin, int MarkStatus, int MarkTur
     setWarna(7);  cout << "   |\n";
     cout << pad << "|                                                      |\n";
     cout << pad << "+------------------------------------------------------+\n";
-    // FIXED: tampilin level player di battle UI juga
     cout << "Level: " << currentplayer.level << "  |  ";
     cout << "HP Kamu: " << HpKawan << "  |  HP Musuh: " << HpMusuh << "  |  ULT Point: " << UltPoin << "/4\n";
     if (ReviveK) {
@@ -1580,7 +1736,7 @@ void AI(int CharacterMonster, int &HpKawan, int &HpMusuh, bool Defend, int Chara
             BuffSawit--;
         }
 
-        if (roll <= 60 - Buff) {
+        if (roll <= 50 - Buff) {
             cout << "BLOCK! Damage diterima: " << finalDamage << "\n";
             HpKawan -= finalDamage;
         } else {
@@ -1682,6 +1838,7 @@ void AttackCharacter(int Aksi, int &HpKawan, int &HpMusuh, int CharacterKawan, b
                 HpMusuh -= TempBaseDamage;
                 cout << "DAMAGE: " << TempBaseDamage << endl;
             }
+            Sleep(1000);
             break;
         } else if (Aksi == 2) {
             Defend = true;
@@ -1787,6 +1944,7 @@ bool Fight(int PilihKarakter,int PilihMusuh) {
             }
         }
 
+     
         if (TempHPC <= 0) { Kawan = false; break; }
         if (TempHPV <= 0) { Musuh = false; break; }
 
@@ -1986,27 +2144,6 @@ void hasilGacha(int arand, int& primo, int rateSSR, int rateSR, int rateR) {
     prosesHasil(rarity, primo);
 }
 
-void gachaPity(int pity, int& primo) {
-    cout << "\n--- GACHA PITY ---\n";
-    cout << "Pity kamu saat ini: " << pity << "\n";
-    cout << "Rarity yang bisa dipilih:\n";
-    if (pity >= 10) cout << "  a. Common (C)\n";
-    if (pity >= 20) cout << "  b. Rare (R)\n";
-    if (pity >= 25) cout << "  c. Epic (SR)\n";
-    if (pity >= 50) cout << "  d. Legendary (SSR)\n";
-    cout << "Pilih (a/b/c/d): ";
-    char pilih; cin >> pilih;
-    cin.ignore(1000, '\n');
-
-    string rarity = "";
-    if      (pilih == 'a' && pity >= 10) rarity = "C";
-    else if (pilih == 'b' && pity >= 20) rarity = "R";
-    else if (pilih == 'c' && pity >= 25) rarity = "SR";
-    else if (pilih == 'd' && pity >= 50) rarity = "SSR";
-
-    if (rarity == "") { cout << "Pilihan tidak valid atau pity belum cukup!\n"; return; }
-    prosesHasil(rarity, primo);
-}
 
 void gacha(int& primo) {
     int SSR = 1, SR = 8, R = 20;
@@ -2186,7 +2323,6 @@ void GameMenu() {
         system("cls");
         setWarna(11);
         cout << "\n  Selamat datang, Keeper " << currentplayer.username << "!\n";
-        // FIXED: tampilkan level & xp di menu
         cout << "  Level : " << currentplayer.level << "\n";
         if (currentplayer.level < 30) {
             cout << "  XP    : " << currentplayer.xp << "/" << xpTable[currentplayer.level + 1] << "\n";
@@ -2203,7 +2339,8 @@ void GameMenu() {
         cout << "| 3. Gacha                      |\n";
         cout << "| 4. Koleksi                    |\n";
         cout << "| 5. Daftar Karakter            |\n";
-        cout << "| 6. Keluar ke Main Menu        |\n";
+        cout << "| 6. Info - Detail              |\n";
+        cout << "| 7. Keluar ke Main Menu        |\n";
         cout << "+-------------------------------+\n";
         cout << "Pilih: ";
         cin >> pilih;
@@ -2228,7 +2365,11 @@ void GameMenu() {
         } else if (pilih == 5) {
             daftarchara();
             cout << "Tekan ENTER untuk kembali ke menu...";
-        } else if (pilih == 6) {
+        }
+          else if (pilih == 6)  {
+             InfoSystem();   
+          }
+         else if (pilih == 7) {
             break;
         } else {
             cout << "Pilihan tidak valid!\n";
@@ -2239,9 +2380,11 @@ void GameMenu() {
 
 // ===== MAIN =====
 int main() {
+    system("cls");
     currentplayer.level = 1;
     currentplayer.xp = 0;
-
+    Sleep(5000);
+    system("cls");
     IsiData();
 
     ofstream File("save.txt", ios::app);
