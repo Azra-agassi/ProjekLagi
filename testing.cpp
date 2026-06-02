@@ -1,9 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <vector>
 #include <algorithm>
-#include <cstdio>
 #include <ctime> 
 #include <windows.h>
 using namespace std;
@@ -49,7 +47,7 @@ struct Villain {
 // ===== GLOBALS =====
 Player currentplayer;
 Pet Character[14];
-Villain Monster[9];
+Villain Monster[13];
 string word;
 
 // ===== FORWARD DECLARATIONS =====
@@ -77,7 +75,7 @@ void AttackCharacter(int Aksi, int &HpKawan, int &HpMusuh, int CharacterKawan, b
 // ===== UTILITY =====
 void ketik(string text, int delay_ms = 30) {
     for (char c : text) {
-        cout << c << flush;
+        cout << c << flush; //fungsi flush biar gak langsung muncul
         Sleep(delay_ms);
     }
 }
@@ -94,47 +92,32 @@ void pause() {
     cin.ignore(1000, '\n');
     cin.get();
 }
-
-void printSideBySide(const string& kiri, const string& kanan, int jarak = 4) {
-    vector<string> barisKiri, barisKanan;
-    stringstream ssKiri(kiri);
+ 
+void printSideBySide(const string& kiri, const string& kanan) {
     string baris;
-    while (getline(ssKiri, baris)) barisKiri.push_back(baris);
-    stringstream ssKanan(kanan);
-    while (getline(ssKanan, baris)) barisKanan.push_back(baris);
+    int lebar = 35;
 
-    int lebarKiri = 0;
-    for (string& s : barisKiri)
-        if ((int)s.size() > lebarKiri) lebarKiri = s.size();
+    // Pass 1: cari lebar kolom kiri
+    stringstream ss(kiri);
+    while (getline(ss, baris))
+        if ((int)baris.size() > lebar) lebar = baris.size();
 
-    int totalBaris = max(barisKiri.size(), barisKanan.size());
-    for (int i = 0; i < totalBaris; i++) {
-        string colomKiri  = (i < (int)barisKiri.size())  ? barisKiri[i]  : "";
-        string colomKanan = (i < (int)barisKanan.size()) ? barisKanan[i] : "";
-        printf("%-*s%*s%s\n", lebarKiri, colomKiri.c_str(), jarak, "", colomKanan.c_str());
+    // Pass 2: print baris per baris
+    stringstream ssK(kiri), ssKn(kanan);
+    string L, R;
+    while (true) {
+        bool adaK  = (bool)getline(ssK,  L);
+        bool adaKn = (bool)getline(ssKn, R);
+        if (!adaK && !adaKn) break;
+        if (!adaK)  L = "";
+        if (!adaKn) R = "";
+        printf("%-*s    %s\n", lebar, L.c_str(), R.c_str());
     }
 }
 
 void StoryMode() {
     system("cls");
     currentplayer.LevelUnlock[1] = true;
-
-    int monsterPerLevel[] = {
-        -1,  
-        0,   
-        1,   
-        2,   
-        3,   
-        4,   
-        3,   
-        4,   
-        5,   
-        6,   
-        7,   
-        6,   
-        7,   
-        8,   
-    };
 
     // Tampilan level
     cout << "=============================\n";
@@ -164,7 +147,7 @@ void StoryMode() {
         if (pilihKarakter == 0) return;
         pilihKarakter--;
         if (pilihKarakter >= 0 && pilihKarakter < 14 && Character[pilihKarakter].unlock)
-            break;
+        break;
         cout << "Character Terkunci atau tidak valid!\n";
     } while (true);
 
@@ -181,8 +164,8 @@ void StoryMode() {
             break;
     } while (true);
 
-    // Fight & reward — satu blok untuk semua level
-    bool menang = Fight(pilihKarakter, monsterPerLevel[pilihLevel]);
+    // Fight & reward satu blok untuk semua level
+    bool menang = Fight(pilihKarakter, pilihLevel - 1);
 
     if (menang) {
         int nextLevel = pilihLevel + 1;
@@ -244,7 +227,7 @@ void EndlessMode() {
         if (!menang) break;
 
         AddXP((int)(50 * multi));
-        currentplayer.primo += 5; cout << "+10 Primo!\n"; 
+        currentplayer.primo += 5; cout << "+5 Primo!\n"; 
         simpanData();
 
         multi += 0.2f;
@@ -367,26 +350,6 @@ void IsiULT() {
 }
 
 
-int calcDamage(int level, int growth) {
-    if (level == 0) return 0;
-    return growth + calcDamage(level - 1, growth);
-}
-
-int calcCrit(int level, int growth) {
-    if (level == 0) return 0;
-    int add = 0;
-    if (level % 5 == 0) add = growth;
-    return add + calcCrit(level - 1, growth);
-}
-
-int calcDef(int level, int growth) {
-    if (level == 0) return 0;
-    int add = 0;
-    if (level % 2 == 0) add = growth;
-    return add + calcDef(level - 1, growth);
-}
-
-
 void initCharacter() {
     Character[0].design = R"(    \\_//
    __/". 
@@ -462,7 +425,7 @@ _   /  `   |
     |       /
     `""""""`)";
 
-    Character[9].design = R"ASCII(   .-'"""`-.
+    Character[9].design = R"(   .-'"""`-.
  .'  .-.-.  `.
 / |--| | |--| \
 | |  `-^-'  | |
@@ -473,23 +436,23 @@ _   /  `   |
     |  |  |
     |  |  |     
    (___|___)
-)ASCII";
+)";
 
-    Character[10].design = R"ASCII( _._     _,-'""`-._
+    Character[10].design = R"( _._     _,-'""`-._
 (,-.`._,'(       |\`-/|
     `-.-' \ )-`( , o o)
           `-    \`_`"'- 
-)ASCII";
+)";
 
-    Character[11].design = R"ASCII(               ___
+    Character[11].design = R"(               ___
       ~*    .'`  _\
            /  (o/       *
 *         |     _\           *
            \  '==.    *
         *   '.____\       ~*
-)ASCII";
+)";
 
-    Character[12].design = R"ASCII(
+    Character[12].design = R"(
                     -,,,__
                      \    ``~~--,,__                /   /
                      /              ``~~--,,_     //--//
@@ -503,9 +466,9 @@ _   /  `   |
                         /  /,              `\   \\ 
                    ,'---\ \              ,---`,;,
                          ```
-)ASCII";
+)";
 
-    Character[13].design = R"ASCII(                       .-.
+    Character[13].design = R"(                       .-.
                       |_:_|
                      /(_Y_)\
 .                   ( \/M\/ )
@@ -527,11 +490,29 @@ _   /  `   |
           |     : : :_/_|  /'._\  '--|_\
           /___.-/_|-'   \  \
                          '-'
-)ASCII";
+)";
 }
 
+int calcDamage(int level, int growth) {
+    if (level == 0) return 0;
+    return growth + calcDamage(level - 1, growth);
+}
 
-// ===== UPGRADE SYSTEM — FIXED: stat sekarang beneran diapply =====
+int calcCrit(int level, int growth) {
+    if (level == 0) return 0;
+    int add = 0;
+    if (level % 5 == 0) add = growth;
+    return add + calcCrit(level - 1, growth);
+}
+
+int calcDef(int level, int growth) {
+    if (level == 0) return 0;
+    int add = 0;
+    if (level % 2 == 0) add = growth;
+    return add + calcDef(level - 1, growth);
+}
+
+// ===== UPGRADE SYSTEM
 void UpgradeSystem() {
     int lvl = currentplayer.level;
 
@@ -567,9 +548,9 @@ void UpgradeSystem() {
 }
 
 int xpTable[] = {
-    0,    // index 0 — tidak dipakai
-    50,   // level 1 → 2
-    75,   // level 2 → 3
+    0,    
+    50,   
+    75,   
     100,
     130,
     170,
@@ -601,14 +582,14 @@ int xpTable[] = {
 };
 
 void AddXP(int amount) {
-    int MAX_LEVEL = 30;
+    int MAX_LEVEL = 50;
 
     currentplayer.xp += amount;
     setWarna(14);
     cout << "+" << amount << " XP!\n";
     setWarna(7);
 
-    // FIXED: pakai level+1 sebagai index, stop di MAX_LEVEL
+    //pakai level+1 sebagai index, stop di MAX_LEVEL
     while (currentplayer.level < MAX_LEVEL) {
         int xpNeed = xpTable[currentplayer.level + 1];
 
@@ -781,6 +762,8 @@ void StatsCharacter() {
 }
 
 void StatsMonster() {
+
+    // ===== DESIGN (lama) =====
     Monster[0].design = R"(
           __
      w  c(..)o   (
@@ -861,86 +844,188 @@ void StatsMonster() {
         ;
      ._/ )";
 
+     Monster[9].design = R"(
+      ////\\\\
+      |      |
+     @  O  O  @
+      |  ~   |         \__
+       \ -- /          |\ |
+     ___|  |___        | \|
+    /          \      /|__|
+   /            \    / /
+  /  /| .  . |\  \  / /
+ /  / |      | \  \/ /
+<  <  |      |  \   /
+ \  \ |  .   |   \_/
+  \  \|______|
+    \_|______|
+      |      |
+      |  |   |
+      |  |   |
+      |__|___|
+      |  |  |
+      (  (  |
+      |  |  |
+      |  |  |
+     _|  |  |
+ cccC_Cccc___)
+";
+
+Monster[10].design = R"(
+              ____==========_______
+   _--____   |    | ""  " "|       \
+  /  )8}  ^^^| 0  |  =     |  o  0  |
+</_ +-==B vvv|""  |  =     | '  "" "|
+   \_____/   |____|________|________|
+            (_(  )\________/___(  )__)
+              |\  \            /  /\
+              | \  \          /  /\ \
+              | |\  \        /  /  \ \
+              (  )(  )       (  \   (  )
+               \  / /        \  \   \  \
+                \|  |\        \  \  |  |
+                 |  | )____    \  \ \  )___
+                 (  )  /  /    (  )  (/  /
+                /___\ /__/     /___\ /__)
+)";
+
+Monster[11].design = R"(
+  |\|\
+>/ ( )=<
+|`'o' ==
+ \(^) =/
+  `< ="
+  /  ||"
+ (   /)="
+  \ (,3="
+   `++||==
+  __||||`==.
+ (,(,___\ "==)
+)";
+
+Monster[12].design = R"(
+   /\  /\
+  /  \/  \
+ / /\ \/\ \
+ \ \/\ \/ /
+  \/ /\/ /
+  / /\/ /\
+ / /\  /\ \
+/ /  \/  \ \
+\ \  /\  / /
+ \ \/  \/ /
+  \/ /\/ /
+  / /\/ /\
+ / /\ \/\ \
+ \ \/\ \/ /
+  \  /\  /
+   \/  \/
+)";
+
+    // ===== DATA =====
     Monster[0].nama = "arem arem";
     Monster[0].Base_Hp = 200;
     Monster[0].Base_Damage = 8;
-    Monster[0].def = 2;
     Monster[0].crital_chance = 30;
     Monster[0].crital_damage = 120;
     Monster[0].level = 1;
     Monster[0].isBoss = false;
 
     Monster[1].nama = "whiskas";
-    Monster[1].Base_Hp = 100;
+    Monster[1].Base_Hp = 300;
     Monster[1].Base_Damage = 12;
-    Monster[1].def = 6;
     Monster[1].crital_chance = 5;
     Monster[1].crital_damage = 120;
-    Monster[1].level = 3;
+    Monster[1].level = 2;
     Monster[1].isBoss = false;
 
     Monster[2].nama = "Nadragong";
-    Monster[2].Base_Hp = 300;
+    Monster[2].Base_Hp = 400;
     Monster[2].Base_Damage = 25;
-    Monster[2].def = 15;
     Monster[2].crital_chance = 10;
     Monster[2].crital_damage = 140;
-    Monster[2].level = 5;
+    Monster[2].level = 3;
     Monster[2].isBoss = true;
 
     Monster[3].nama = "Wong Silver";
-    Monster[3].Base_Hp = 180;
+    Monster[3].Base_Hp = 500;
     Monster[3].Base_Damage = 22;
-    Monster[3].def = 10;
     Monster[3].crital_chance = 20;
     Monster[3].crital_damage = 150;
-    Monster[3].level = 7;
+    Monster[3].level = 4;
     Monster[3].isBoss = false;
 
     Monster[4].nama = "KaKangkung";
-    Monster[4].Base_Hp = 280;
+    Monster[4].Base_Hp = 900;
     Monster[4].Base_Damage = 26;
-    Monster[4].def = 22;
     Monster[4].crital_chance = 8;
     Monster[4].crital_damage = 130;
-    Monster[4].level = 9;
-    Monster[4].isBoss = false;
+    Monster[4].level = 5;
+    Monster[4].isBoss = true;
 
-    Monster[5].nama = "Ikan Lohan";
+    Monster[5].nama = "Lintah Darat";
     Monster[5].Base_Hp = 650;
-    Monster[5].Base_Damage = 45;
-    Monster[5].def = 35;
-    Monster[5].crital_chance = 12;
-    Monster[5].crital_damage = 150;
-    Monster[5].level = 12;
-    Monster[5].isBoss = true;
+    Monster[5].Base_Damage = 18;
+    Monster[5].crital_chance = 25;
+    Monster[5].crital_damage = 160;
+    Monster[5].level = 6;
+    Monster[5].isBoss = false;
 
-    Monster[6].nama = "Gogoboy";
-    Monster[6].Base_Hp = 250;
-    Monster[6].Base_Damage = 40;
-    Monster[6].def = 15;
-    Monster[6].crital_chance = 30;
-    Monster[6].crital_damage = 180;
-    Monster[6].level = 14;
+    Monster[6].nama = "Bebek Ngeselin";
+    Monster[6].Base_Hp = 550;
+    Monster[6].Base_Damage = 20;
+    Monster[6].crital_chance = 40;
+    Monster[6].crital_damage = 170;
+    Monster[6].level = 7;
     Monster[6].isBoss = false;
 
-    Monster[7].nama = "Jungkir Balik";
-    Monster[7].Base_Hp = 400;
-    Monster[7].Base_Damage = 55;
-    Monster[7].def = 20;
-    Monster[7].crital_chance = 15;
-    Monster[7].crital_damage = 160;
-    Monster[7].level = 17;
-    Monster[7].isBoss = false;
+    Monster[7].nama = "Ikan Lohan";
+    Monster[7].Base_Hp = 1200;
+    Monster[7].Base_Damage = 45;
+    Monster[7].crital_chance = 12;
+    Monster[7].crital_damage = 150;
+    Monster[7].level = 8;
+    Monster[7].isBoss = true;
 
-    Monster[8].nama = "witchak cuk";
-    Monster[8].Base_Hp = 1200;
-    Monster[8].Base_Damage = 85;
-    Monster[8].def = 45;
-    Monster[8].crital_chance = 25;
-    Monster[8].crital_damage = 200;
-    Monster[8].level = 20;
-    Monster[8].isBoss = true;
+    Monster[8].nama = "Gogoboy";
+    Monster[8].Base_Hp = 1300;
+    Monster[8].Base_Damage = 40;
+    Monster[8].crital_chance = 30;
+    Monster[8].crital_damage = 180;
+    Monster[8].level = 9;
+    Monster[8].isBoss = false;
+
+    Monster[9].nama = "Jungkir Balik";
+    Monster[9].Base_Hp = 1500;
+    Monster[9].Base_Damage = 55;
+    Monster[9].crital_chance = 15;
+    Monster[9].crital_damage = 160;
+    Monster[9].level = 10;
+    Monster[9].isBoss = false;
+
+    Monster[10].nama = "Shadow Rift";
+    Monster[10].Base_Hp = 1000;
+    Monster[10].Base_Damage = 60;
+    Monster[10].crital_chance = 50;
+    Monster[10].crital_damage = 200;
+    Monster[10].level = 11;
+    Monster[10].isBoss = false;
+
+    Monster[11].nama = "Witchak Cuk";
+    Monster[11].Base_Hp = 1500;
+    Monster[11].Base_Damage = 85;
+    Monster[11].crital_chance = 25;
+    Monster[11].crital_damage = 200;
+    Monster[11].level = 12;
+    Monster[11].isBoss = true;
+
+    Monster[12].nama = "Rift Guardian";
+    Monster[12].Base_Hp = 2000;
+    Monster[12].Base_Damage = 70;
+    Monster[12].crital_chance = 20;
+    Monster[12].crital_damage = 180;
+    Monster[12].level = 13;
+    Monster[12].isBoss = true;
 }
 
 void IsiData() {
@@ -953,93 +1038,69 @@ void IsiData() {
 // ===== LORE =====
 void lore() {
     system("cls");
+
     setWarna(11);
-    ketik("LUMINARA — 20XX\n", 50);
+    ketik("LUMINARA — ???\n\n", 50);
+    tunggu(600);
+
     setWarna(7);
-    ketik("11 September\n\n", 50);
+    ketik("Tanggal tidak diketahui.\n");
+    tunggu(700);
+
+    setWarna(12);
+    ketik("Langit tiba-tiba terbuka.\n\n", 60);
+    tunggu(600);
+
+    setWarna(4);
+    ketik("RIFT.\n\n", 120);
+    tunggu(700);
+
+    setWarna(7);
+    ketik("Tidak ada yang tahu kenapa.\n");
+    ketik("Tidak ada yang bisa menghentikan.\n\n");
     tunggu(800);
 
-    ketik("Dunia hewan lagi damai banget...\n");
-    ketik("Damai sampe bikin orang pengen demo.\n\n");
-    tunggu(900);
-
-    ketik("Tiba-tiba...\n\n");
-    tunggu(500);
-    setWarna(12);
-    ketik("DUARRR!!!\n\n", 110);
-    tunggu(400);
-
-    setWarna(14);
-    ketik("Langit retak parah.\n");
-    ketik("Kayak infrastruktur pemerintah yang dibiayain APBN.\n\n");
-    tunggu(900);
+    ketik("Yang masuk...\n");
+    ketik("tidak selalu kembali.\n\n");
+    tunggu(700);
 
     setWarna(13);
-    ketik("Semua hewan pada panik:\n");
-    ketik("\"Ini serangan musuh?\n");
-    ketik("Atau proyek pemerintah yang molor lagi?\"\n\n");
-    tunggu(1000);
-
-    setWarna(11);
-    ketik("Ternyata bukan meteor, bukan perang...\n");
-    ketik("Tapi Rift.\n\n");
-    tunggu(800);
-
-    setWarna(4);
-    ketik("RIFT.\n\n", 130);
+    ketik("Yang kembali...\n");
+    ketik("tidak selalu sama.\n\n");
     tunggu(900);
-
-    setWarna(7);
-    ketik("Dari dalam Rift keluar monster-monster.\n");
-    ketik("Ada yang imut, ada yang langsung ngamuk.\n\n");
-    tunggu(800);
-
-    setWarna(4);
-    ketik("MONSTER.\n\n", 100);
-    tunggu(700);
 
     setWarna(10);
-    ketik("Tapi ada juga yang santai ngeliat Rift itu...\n");
-    ketik("sambil bilang:\n\n");
+    ketik("Di dalam Rift:\n");
+    ketik("- Floor berubah\n");
+    ketik("- Musuh berubah\n");
+    ketik("- Aturan berubah\n\n");
     tunggu(900);
-
-    setWarna(14);
-    ketik("\"Masuk aja lah, lebih berguna daripada nunggu bansos.\"\n\n", 70);
-    tunggu(1000);
-
-    setWarna(7);
-    ketik("Dan mereka gas masuk.\n");
-    ketik("Karena di dunia luar, gaji naik doang 2%, pajak naik 200%.\n\n");
-    tunggu(1100);
-
-    ketik("Di dalam Rift, semakin dalam semakin susah.\n");
-    ketik("Mirip banget sama birokrasi pemerintah.\n\n");
-    tunggu(900);
-
-    setWarna(11);
-    ketik("Dan kamu...\n", 60);
-    tunggu(700);
-    ketik("apa yaaa...\n");
-    ketik("Kamu adalah KEEPER.\n\n");
-    tunggu(900);
-
-    setWarna(14);
-    ketik("KEEPER.\n\n", 100);
-    tunggu(800);
-
-    setWarna(7);
-    ketik("Tugasmu:\n");
-    ketik("- Masuk Rift\n");
-    ketik("- Naik Floor\n");
-    ketik("- Jangan mati konyol kayak janji pemerintah\n\n");
-    tunggu(1100);
 
     setWarna(12);
-    ketik("Kalo mati?\n");
-    ketik("Ulang lagi bro. Paling cuma rugi 5 tahun hidup, sama kayak nunggu reformasi.\n\n");
+    ketik("Kadang kamu kuat.\n");
+    ketik("Kadang kamu mati dalam 2 detik.\n\n");
+    tunggu(800);
+
+    setWarna(11);
+    ketik("Tidak ada alasan.\n");
+    ketik("Tidak ada keadilan.\n\n");
     tunggu(900);
 
-    cout << "\n\nTekan ENTER kalo mental lu udah siap dihancurin lebih parah dari ekonomi negara...";
+    setWarna(14);
+    ketik("Hanya RNG.\n\n", 100);
+    tunggu(900);
+
+    setWarna(7);
+    ketik("Dan kamu...\n");
+    ketik("tetap masuk.\n\n");
+    tunggu(900);
+
+    setWarna(12);
+    ketik("Karena mungkin...\n");
+    ketik("run berikutnya lebih baik.\n\n");
+    tunggu(1000);
+
+    cout << "\n\nTekan ENTER untuk mulai run yang mungkin gagal...";
     pause();
     system("cls");
 }
@@ -1092,7 +1153,7 @@ void Logo() {
         ofstream Lore("save.txt", ios::app);
         Lore << "Lore_True" << " ";
         setWarna(10);
-        ketik("Masukan Nama kamu Keeper: ");
+        ketik("Masukan Nama kamu Nyong: ");
         tunggu(1000);
         setWarna(7);
         cin >> currentplayer.username;
@@ -1113,12 +1174,12 @@ void Logo() {
         while (Load >> token) {
             if (token != "Lore_True" && token != "Tutor_True"
                 && token.substr(0,6) != "primo:"
-                && token.substr(0,6) != "level:"   // FIXED: skip token level
-                && token.substr(0,3) != "xp:") {   // FIXED: skip token xp
+                && token.substr(0,6) != "level:"   
+                && token.substr(0,3) != "xp:") {   
                 bool ituKarakter = false;
                 for (int i = 0; i < 14; i++)
-                    if (Character[i].nama == token) { ituKarakter = true; break; }
-                if (!ituKarakter) currentplayer.username = token;
+                if (Character[i].nama == token) { ituKarakter = true; break; }
+                if (!ituKarakter) currentplayer.username = token; //Nyari nama
             }
         }
         Load.close();
@@ -1141,100 +1202,80 @@ void Tutorial1() {
     system("cls");
 
     setWarna(10);
-    ketik("=== TUTORIAL (BIAR GA DIBANTAI DI FLOOR 1) ===\n\n", 40);
+    ketik("=== TUTORIAL ===\n\n", 40);
     tunggu(500);
 
     setWarna(7);
-    ketik("Oke denger ya...\n");
-    ketik("Game ini turn-based.\n");
-    ketik("Artinya kamu mukul, musuh mukul balik.\n\n");
+    ketik("Game ini menggunakan sistem turn-based.\n");
+    ketik("Setiap giliran, kamu bertindak.\n");
+    ketik("Kemudian musuh akan merespons.\n\n");
     tunggu(800);
 
-    ketik("Simple kan?\n");
-    ketik("Iya... tapi ga sesimple itu.\n\n");
-    tunggu(800);
+    ketik("Keputusanmu menentukan hasil pertarungan.\n\n");
+    tunggu(700);
 
     setWarna(11);
     ketik("=== ACTION ===\n\n", 40);
     setWarna(7);
 
-    ketik("Pas giliran lu:\n");
-    ketik("- Fight  : pukul musuh (no brain mode)\n");
-    ketik("- Defend : tahan damage + bisa nge-reflect\n");
-    ketik("- ULT    : jurus pamungkas\n\n");
+    ketik("- Fight   : Menyerang musuh\n");
+    ketik("- Defend  : Mengurangi damage dan berpeluang melakukan deflect\n");
+    ketik("- ULT     : Skill kuat dengan efek khusus\n\n");
     tunggu(1000);
 
     setWarna(12);
-    ketik("=== ULT SYSTEM (INI YANG BIKIN LU GG) ===\n\n", 40);
+    ketik("=== ULT SYSTEM ===\n\n", 40);
     setWarna(7);
 
-    ketik("ULT ga bisa dipake sembarangan.\n");
-    ketik("Lu butuh POINT.\n\n");
+    ketik("ULT membutuhkan poin untuk digunakan.\n\n");
 
-    ketik("Cara dapet point:\n");
-    ketik("- CRIT (pukulan hoki anak RNG)\n");
-    ketik("- DEFLECT (balikin damage kayak sigma)\n\n");
+    ketik("Poin dapat diperoleh melalui:\n");
+    ketik("- Critical hit\n");
+    ketik("- Deflect saat bertahan\n\n");
     tunggu(1000);
 
-    setWarna(14);
-    ketik("Kalo point full...\n");
-    ketik("ULT SIAP DI-SPAM!\n\n", 50);
+    ketik("Saat poin penuh, ULT dapat digunakan.\n\n");
     tunggu(800);
 
     setWarna(13);
-    ketik("=== DEFLECT (MEKANIK GACOR) ===\n\n", 40);
+    ketik("=== DEFLECT ===\n\n", 40);
     setWarna(7);
 
-    ketik("Defend itu bukan cuma ngurangin damage.\n");
-    ketik("Kadang lu bisa DEFLECT.\n\n");
-
-    ketik("Artinya:\n");
-    ketik("Musuh nyerang...\n");
-    ketik("LU BALIKIN!\n\n");
+    ketik("Saat bertahan, ada kemungkinan untuk melakukan deflect.\n");
+    ketik("Deflect akan mengembalikan sebagian atau seluruh damage ke musuh.\n\n");
     tunggu(1000);
 
-    setWarna(10);
-    ketik("Dan dapet POINT ULT juga \n\n", 50);
-    tunggu(800);
-
     setWarna(11);
-    ketik("=== GACHA (JUDI HALAL) ===\n\n", 40);
+    ketik("=== REWARD ===\n\n", 40);
     setWarna(7);
 
-    ketik("Abis menang, lu dapet reward.\n");
-    ketik("Kadang dapet PRIMOGEMS.\n\n");
+    ketik("Setelah menang, kamu akan mendapatkan reward.\n");
+    ketik("Beberapa reward dapat digunakan untuk gacha.\n\n");
 
-    ketik("Primogems buat apa?\n");
-    ketik("GACHA dong.\n\n");
-
-    ketik("Lu bisa dapet:\n");
-    ketik("- Common (biasa aja)\n");
-    ketik("- Rare (lumayan)\n");
-    ketik("- Epic (mulai sakit)\n");
-    ketik("- Legendary (broken anjing)\n\n");
+    ketik("Tingkat rarity:\n");
+    ketik("- Common\n");
+    ketik("- Rare\n");
+    ketik("- Epic\n");
+    ketik("- Legendary\n\n");
     tunggu(1200);
 
-    setWarna(14);
-    ketik("Semakin langka → semakin ngawur skillnya.\n\n", 50);
+    ketik("Semakin tinggi rarity, semakin kuat efeknya.\n\n");
     tunggu(800);
 
     setWarna(12);
-    ketik("=== TUJUAN HIDUP LU SEKARANG ===\n\n", 40);
+    ketik("=== OBJECTIVE ===\n\n", 40);
     setWarna(7);
 
     ketik("Masuk ke Rift.\n");
-    ketik("Naik Floor.\n");
-    ketik("Jangan mati.\n\n");
-
-    ketik("Itu aja.\n\n");
+    ketik("Naik ke floor berikutnya.\n");
+    ketik("Bertahan selama mungkin.\n\n");
     tunggu(1000);
 
     setWarna(10);
-    ketik("Kalo mati?\n");
-    ketik("Ya ulang lagi bro nyuk\n\n", 60);
+    ketik("Jika gagal, kamu bisa mencoba kembali.\n\n");
 
     setWarna(7);
-    ketik("Tekan ENTER kalo lu udah siap mental...");
+    ketik("Tekan ENTER untuk memulai.");
     pause();
 
     system("cls");
@@ -1579,7 +1620,7 @@ void AttackCharacter(int Aksi, int &HpKawan, int &HpMusuh, int CharacterKawan, b
 
     do {
         system("cls");
-        printSideBySide(Character[CharacterKawan].design, Monster[CharacterMusuh].design, 30);
+        printSideBySide(Character[CharacterKawan].design, Monster[CharacterMusuh].design);
         BattleUI(HpKawan, HpMusuh, PointULT, MarkStatus, MarkTurn, Marked, ReviveK, JumlahRevive, MaxTurnK, MarlongMode, JumlahMarlong, MarlongTurn, DarkForce, DarkForceTurn);
         cin >> Aksi;
         cin.ignore(1000, '\n');
@@ -1671,7 +1712,7 @@ void AttackCharacter(int Aksi, int &HpKawan, int &HpMusuh, int CharacterKawan, b
 
 // ===== FIGHT =====
 bool Fight(int PilihKarakter,int PilihMusuh) {
-    srand((unsigned int)time(0));
+    
 
     int SelectC = 0;
     int SelectV = 0;
@@ -1833,16 +1874,16 @@ void simpanData() {
                 bool ituKarakter = false;
                 for (int i = 0; i < 14; i++)
                 if (Character[i].nama == token) { ituKarakter = true; break; }
-                if (!ituKarakter) namaPlayer = token;
+                if (!ituKarakter) namaPlayer = token; // Nyari nama
             }
         }
     }
     
-    ofstream f("save.txt");
+    ofstream f("save.txt"); //overwrite bikin baru
     if (adaLore)  f << "Lore_True ";
     if (adaTutor) f << "Tutor_True ";
     if (namaPlayer != "") f << namaPlayer << " ";
-    // FIXED: simpan level & xp
+    //  simpan level & xp
     f << "level:" << currentplayer.level << " ";
     f << "xp:" << currentplayer.xp << " ";
     f << "primo:" << currentplayer.primo << " ";
@@ -1889,7 +1930,6 @@ void loadData() {
                     break;
                 }
             }
-            // Kalau bukan karakter, baru anggap nama player
             if (!ituKarakter) currentplayer.username = token;
         }
     }
@@ -1981,12 +2021,9 @@ void gacha(int& primo) {
 
         cout << "\n==============================\n";
         cout << "Primo  : " << primo << "\n";
-        cout << "Pity   : " << pity << "\n";
-        cout << "Rate SSR saat ini: " << SSR << "%\n";
         cout << "------------------------------\n";
         cout << "1. Gacha biasa (random)\n";
-        cout << "2. Gacha pity (pilih rarity)\n";
-        cout << "3. Keluar dari gacha\n";
+        cout << "2. Keluar dari gacha\n";
         cout << "Pilih: ";
 
         int opsi; cin >> opsi;
@@ -1998,24 +2035,10 @@ void gacha(int& primo) {
 
         if (opsi == 1) {
             hasilGacha(acha, primo, SSR, SR, R);
-            if (acha <= SSR) {
-                cout << "[HOKI] Dapet SSR! Pity & rate di-reset.\n";
-                pity = 0; SSR = 5;
-            } else {
-                pity++; SSR++;
-                cout << "[PITY] Rate SSR naik ke: " << SSR << "%\n";
-            }
         } else if (opsi == 2) {
-            if (pity < 10) {
-                cout << "Pity belum cukup! Minimal pity 10.\n";
-                primo += 10;
-            } else {
-                gachaPity(pity, primo);
-                pity = 0;
-            }
+        return;
         } else {
             cout << "Opsi tidak valid!\n";
-            primo += 10;
         }
 
         cout << "\nGacha lagi? (y/n): ";
@@ -2156,7 +2179,7 @@ do {
 void GameMenu() {
     int pilih = 0;
     loadData();
-    // FIXED: apply upgrade sesuai level yang di-load
+
     if (currentplayer.level > 1) UpgradeSystem();
 
     while (true) {
@@ -2216,7 +2239,6 @@ void GameMenu() {
 
 // ===== MAIN =====
 int main() {
-    // FIXED: level start dari 1 bukan 0
     currentplayer.level = 1;
     currentplayer.xp = 0;
 
